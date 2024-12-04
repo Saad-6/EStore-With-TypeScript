@@ -3,16 +3,18 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
-import { StarIcon } from '@heroicons/react/20/solid'
-
-import { Product, Variant, VariantOption } from '@/interfaces/product-interfaces'
+import { StarIcon, PlusIcon, MinusIcon } from '@heroicons/react/20/solid'
+import { Product, Variant, VariantOption, ProductImage } from '@/interfaces/product-interfaces'
 import toast from 'react-hot-toast'
+
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+import { AnimatePresence, motion } from 'framer-motion'
 import RecommendedProducts from '../components/recommended-products'
 import { Button } from '../components/ui/button'
 import { Modal } from '../components/ui/cart-modal'
 import UserReviews from '../components/user-review'
-import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group'
-import { Label } from '../components/ui/label'
 
 export default function ProductDetails() {
   const params = useParams()
@@ -23,8 +25,11 @@ export default function ProductDetails() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [isHovering, setIsHovering] = useState(false)
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([])
   const [selectedVariants, setSelectedVariants] = useState<Record<string, VariantOption>>({})
+  const [currentPrice, setCurrentPrice] = useState(0)
+  const [currentImages, setCurrentImages] = useState<ProductImage[]>([])
 
   useEffect(() => {
     const fetchProductAndRecommendations = async () => {
@@ -44,8 +49,9 @@ export default function ProductDetails() {
 
         setProduct(productData)
         setRecommendedProducts(recommendationsData)
+        setCurrentPrice(productData.price)
+        setCurrentImages([productData.primaryImage, ...productData.images])
 
-        // Initialize selected variants
         if (productData.variants) {
           const initialSelectedVariants: Record<string, VariantOption> = {}
           productData.variants.forEach(variant => {
@@ -67,42 +73,88 @@ export default function ProductDetails() {
   }, [productSlug])
 
   const handleVariantChange = (variantName: string, value: string) => {
-    const variant = product?.variants.find(v => v.name === variantName)
-    const option = variant?.options.find(o => o.value === value)
+    const variant = product?.variants.find(v => v.name === variantName);
+    const option = variant?.options.find(o => o.value === value);
     if (option) {
       setSelectedVariants(prev => ({
         ...prev,
         [variantName]: option
       }))
+      updatePrice(variantName, option)
+
+      if (option.optionImages && option.optionImages.length > 0) {
+        setCurrentImages([option.optionImages[0], ...option.optionImages.slice(1)])
+        setActiveImageIndex(0)
+      } else {
+        setCurrentImages([product!.primaryImage, ...product!.images])
+        setActiveImageIndex(0)
+      }
     }
+  }
+
+  const updatePrice = (variantName: string, newOption: VariantOption) => {
+    if (!product) return
+
+    let newPrice = product.price
+    Object.entries(selectedVariants).forEach(([name, option]) => {
+      if (name !== variantName) {
+        newPrice += option.priceAdjustment
+      }
+    })
+    newPrice += newOption.priceAdjustment
+    setCurrentPrice(newPrice)
   }
 
   const handleAddToCart = () => {
     setIsModalOpen(true)
+  }
+
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(Math.max(1, newQuantity))
+  }
+
+  const confirmAddToCart = () => {
+    if (!product) return
+
     const cart = JSON.parse(localStorage.getItem('cart') || '[]')
     const cartItem = {
-      ...product,
-      quantity,
-      selectedVariants
+      productId: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: currentPrice,
+      image: currentImages[0].url,
+      quantity: quantity,
+      selectedVariants: selectedVariants
     }
+    
     const existingItemIndex = cart.findIndex((item: any) => 
-      item.id === product?.id && 
+      item.productId === product.id && 
       JSON.stringify(item.selectedVariants) === JSON.stringify(selectedVariants)
     )
+    
     if (existingItemIndex !== -1) {
       cart[existingItemIndex].quantity += quantity
+      cart[existingItemIndex].price = currentPrice
     } else {
       cart.push(cartItem)
     }
+    
     localStorage.setItem('cart', JSON.stringify(cart))
-  }
-
-  const handleCloseModal = () => {
     setIsModalOpen(false)
+    toast.success('Item added to cart')
   }
 
-  const handleViewCart = () => {
+  const handleBuyNow = () => {
+    confirmAddToCart()
     router.push('/cart')
+  }
+
+  const handleMouseEnter = () => {
+    setIsHovering(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovering(false)
   }
 
   if (isLoading) {
@@ -113,41 +165,55 @@ export default function ProductDetails() {
     return <div className="container mx-auto px-4 py-8">Product not found</div>
   }
 
-  const productImages = [
-    product.primaryImage,
-    ...(Array.isArray(product.images) ? product.images : [])
-  ]
-
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-8">
         {/* Product Images */}
-        <div className="w-full md:w-1/2 space-y-4">
-          <div className="relative aspect-square">
-            {productImages.length > 0 && (
-              <Image
-                src={productImages[activeImageIndex].url}
-                alt={productImages[activeImageIndex].altText}
-                fill
-                className="rounded-lg object-cover"
-              />
-            )}
+        <div className="w-full lg:w-2/3 flex flex-col items-center">
+          <div 
+            className="relative w-full max-w-2xl aspect-square mb-4"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={isHovering ? 'hover' : 'default'}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0"
+              >
+                {currentImages.length > 0 && (
+                  <Image
+                    src={isHovering && currentImages.length > 1
+                      ? currentImages[1].url 
+                      : currentImages[activeImageIndex].url}
+                    alt={isHovering && currentImages.length > 1
+                      ? currentImages[1].altText
+                      : currentImages[activeImageIndex].altText}
+                    fill
+                    className="rounded-lg object-cover"
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
-          {productImages.length > 1 && (
-            <div className="flex space-x-2 overflow-x-auto pb-2">
-              {productImages.map((image, index) => (
+          {currentImages.length > 1 && (
+            <div className="flex space-x-2 mt-4">
+              {currentImages.slice(0, 3).map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setActiveImageIndex(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden ${
-                    index === activeImageIndex ? 'ring-2 ring-blue-500' : ''
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                    index === activeImageIndex ? 'border-blue-500' : 'border-transparent'
                   }`}
                 >
                   <Image
                     src={image.url}
                     alt={image.altText}
-                    width={80}
-                    height={80}
+                    width={64}
+                    height={64}
                     className="object-cover w-full h-full"
                   />
                 </button>
@@ -157,9 +223,9 @@ export default function ProductDetails() {
         </div>
 
         {/* Product Details */}
-        <div className="w-full md:w-1/2">
+        <div className="w-full lg:w-1/3">
           <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-          <p className="text-2xl font-semibold mb-4">${product.price.toFixed(2)}</p>
+          <p className="text-2xl font-semibold mb-4">${currentPrice.toFixed(2)}</p>
           
           <div className="flex items-center mb-4">
             <div className="flex items-center">
@@ -175,92 +241,126 @@ export default function ProductDetails() {
             <span className="ml-2 text-gray-600">4.5 (120 reviews)</span>
           </div>
 
-          <p className="text-gray-600 mb-6">{product.description}</p>
-
-          <div className="mb-6">
-            <p className="font-semibold">Category: <span className="font-normal">{product.category.name}</span></p>
-            <p className="font-semibold">Brand: <span className="font-normal">{product.brand}</span></p>
-          </div>
-
           {/* Variants */}
           {product.variants && product.variants.length > 0 && (
             <div className="mb-6 space-y-4">
               {product.variants.map((variant) => (
                 <div key={variant.id}>
-                  <Label htmlFor={`variant-${variant.id}`}>{variant.name}</Label>
-                  <RadioGroup
-                    value={selectedVariants[variant.name]?.value || ''}
-                    onValueChange={(value) => handleVariantChange(variant.name, value)}
-                    className="mt-2"
-                  >
-                    {variant.options.map((option) => (
-                   <div key={option.id} className="flex items-center space-x-2">
-                   <RadioGroupItem
-                     value={option.value}
-                     id={`${variant.name}-${option.id}`}
-                   />
-                   <Label htmlFor={`${variant.name}-${option.id}`} className="flex items-center">
-                     {option.value}
-                     {option.priceAdjustment !== 0 && (
-                       <span className={`ml-2 text-sm ${option.priceAdjustment > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                         {option.priceAdjustment > 0 ? '+' : '-'}${Math.abs(option.priceAdjustment).toFixed(2)}
-                       </span>
-                     )}
-                   </Label>
-                 </div>
-
-                    ))}
-                  </RadioGroup>
+                  <Label htmlFor={`variant-${variant.id}`} className="text-lg font-semibold">{variant.name}</Label>
+                  {variant.displayType === 'dropdown' ? (
+                    <Select
+                      value={selectedVariants[variant.name]?.value || ''}
+                      onValueChange={(value) => handleVariantChange(variant.name, value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={`Select ${variant.name}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {variant?.options
+                         .filter((option) => option?.value)
+                        .map((option) => (
+                          <SelectItem key={option?.id} value={option?.value}>
+                            {option?.value}
+                            {option?.priceAdjustment !== 0 && (
+                              <span className={`ml-2 ${option?.priceAdjustment > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {option?.priceAdjustment > 0 ? '+' : '-'}${Math.abs(option?.priceAdjustment).toFixed(2)}
+                              </span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {variant?.options.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => handleVariantChange(variant.name, option.value)}
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+                            ${selectedVariants[variant.name]?.value === option.value
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            }`}
+                        >
+                          {option.value}
+                          {option.priceAdjustment !== 0 && (
+                            <span className={`ml-2 ${option.priceAdjustment > 0 ? 'text-green-200' : 'text-red-200'}`}>
+                              {option.priceAdjustment > 0 ? '+' : '-'}${Math.abs(option.priceAdjustment).toFixed(2)}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
           <div className="mb-6">
-            <Label htmlFor="quantity">Quantity</Label>
-            <input
-              type="number"
-              id="quantity"
-              name="quantity"
-              min="1"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              className="mt-1 block w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            />
+            <Label htmlFor="quantity" className="text-lg font-semibold">Quantity</Label>
+            <div className="flex items-center mt-2">
+              <button
+                onClick={() => handleQuantityChange(quantity - 1)}
+                className="bg-gray-200 text-gray-600 hover:bg-gray-300 h-8 w-8 rounded-l-md flex items-center justify-center"
+              >
+                <MinusIcon className="h-4 w-4" />
+              </button>
+              <input
+                type="text"
+                id="quantity"
+                name="quantity"
+                value={quantity}
+                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                className="h-8 w-16 text-center border-t border-b border-gray-300 dark:text-black"
+                style={{ appearance: 'textfield' }}
+              />
+              <button
+                onClick={() => handleQuantityChange(quantity + 1)}
+                className="bg-gray-200 text-gray-600 hover:bg-gray-300 h-8 w-8 rounded-r-md flex items-center justify-center"
+              >
+                <PlusIcon className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-4">
-            <Button size="lg" onClick={handleAddToCart}>Add to Cart</Button>
-            <Button size="lg" variant="outline">Add to Wishlist</Button>
+            <Button size="lg" onClick={handleAddToCart} className="flex-1">Add to Cart</Button>
+            <Button size="lg" variant="secondary" onClick={handleBuyNow} className="flex-1">Buy Now</Button>
           </div>
         </div>
       </div>
 
+      {/* Product Description */}
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold mb-4">Product Details</h2>
+        <p className="text-gray-600">{product.description}</p>
+      </div>
+
       {/* User Reviews Section */}
-      <UserReviews />
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold mb-4">Customer Reviews</h2>
+        <UserReviews />
+      </div>
 
       {/* Recommended Products Section */}
-      <RecommendedProducts products={recommendedProducts} />
+      <div className="mt-12">
+        <RecommendedProducts products={recommendedProducts} />
+      </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-4">Item Added to Cart</h2>
-          <p className="mb-4">
-            {quantity} x {product.name} has been added to your cart.
-          </p>
-          {Object.entries(selectedVariants).map(([variantName, option]) => (
-            <p key={variantName} className="mb-2">
-              {variantName}: {option.value}
-            </p>
-          ))}
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={handleCloseModal}>
-              Continue Shopping
-            </Button>
-            <Button onClick={handleViewCart}>View Cart</Button>
-          </div>
-        </div>
-      </Modal>
+      {product && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          product={product}
+          quantity={quantity}
+          selectedVariants={selectedVariants}
+          onQuantityChange={handleQuantityChange}
+          onVariantChange={handleVariantChange}
+          onConfirm={confirmAddToCart}
+        />
+      )}
     </div>
   )
 }
+

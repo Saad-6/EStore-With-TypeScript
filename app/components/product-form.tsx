@@ -1,67 +1,23 @@
 import React, { useState, useEffect } from 'react'
-import { Category } from '@/interfaces/product-interfaces'
-import { prototype } from 'events';
-
-interface SEODTO {
-  metaTitle: string;
-  metaDescription: string;
-  metaKeywords: string;
-  canonicalUrl: string;
-}
-
-interface ProductImageDTO {
-  url: string;
-  altText: string;
-}
-
-interface VariantOptionDTO {
-  id?: number;
-  value: string;
-  optionImages?: ProductImageDTO[];
-  priceAdjustment: number;
-  stock: number;
-  sku?: string;
-}
-
-interface VariantDTO {
-  id?: number;
-  name: string;
-  options: VariantOptionDTO[];
-}
-
-interface ProductDTO {
-  id?: number;
-  name: string;
-  description: string;
-  price: number;
-  sku: string;
-  stock: number;
-  brand: string;
-  category: Category;
-  slug: string;
-  isActive: boolean;
-  seo: SEODTO;
-  primaryImage: ProductImageDTO;
-  images: ProductImageDTO[];
-  variants: VariantDTO[];
-}
+import { Category, ProductDTO } from '@/interfaces/product-interfaces'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ProductFormProps {
   product?: ProductDTO;
-  onSubmit: (product: ProductDTO, operation: string) => void;
+  onSubmit: (product: ProductDTO, operation: string) => Promise<void>;
   categories: Category[];
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories }) => {
   const [formData, setFormData] = useState<ProductDTO>({
-    id : product?.id,
+    id: product?.id,
     name: '',
     description: '',
     price: 0,
     sku: '',
     stock: 0,
     brand: '',
-    category: categories[0] || null,
+    category: categories[0] || 0,
     slug: '',
     isActive: true,
     seo: {
@@ -78,13 +34,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
   useEffect(() => {
     if (product) {
       setFormData(product)
-      console.log(product)
     }
   }, [product])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    if (name === 'categoryId') {
+      const selectedCategory = categories.find(cat => cat.id.toString() === value) || categories[0]
+      setFormData(prev => ({ ...prev, category: selectedCategory }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const handleSEOChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -95,10 +55,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const { name, value } = e.target
     if (index === -1) {
-      // Primary image
       setFormData(prev => ({ ...prev, primaryImage: { ...prev.primaryImage, [name]: value } }))
     } else {
-      // Additional images
       const newImages = [...formData.images]
       newImages[index] = { ...newImages[index], [name]: value }
       setFormData(prev => ({ ...prev, images: newImages }))
@@ -119,7 +77,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
   const handleAddVariant = () => {
     setFormData(prev => ({
       ...prev,
-      variants: [...prev.variants, { name: '', options: [{ value: '', priceAdjustment: 0, stock: 0 }] }]
+      variants: [...prev.variants, { name: '', displayType: 'dropdown', options: [{ value: '', priceAdjustment: 0, stock: 0 }] }]
     }))
   }
 
@@ -128,10 +86,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
     setFormData(prev => ({ ...prev, variants: newVariants }))
   }
 
-  const handleVariantChange = (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
-    const { value } = e.target
+  const handleVariantChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, variantIndex: number) => {
+    const { name, value } = e.target
     const newVariants = [...formData.variants]
-    newVariants[variantIndex].name = value
+    newVariants[variantIndex] = { ...newVariants[variantIndex], [name]: value }
     setFormData(prev => ({ ...prev, variants: newVariants }))
   }
 
@@ -181,8 +139,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
 
   const handleRemoveVariantOptionImage = (variantIndex: number, optionIndex: number, imageIndex: number) => {
     const newVariants = [...formData.variants]
-    newVariants[variantIndex].options[optionIndex].optionImages = newVariants[variantIndex].options[optionIndex].optionImages.filter((_, i) => i !== imageIndex)
-    setFormData(prev => ({ ...prev, variants: newVariants }))
+    if (newVariants[variantIndex]?.options?.[optionIndex]?.optionImages) {
+      newVariants[variantIndex].options[optionIndex].optionImages = 
+          newVariants[variantIndex].options[optionIndex].optionImages.filter((_, i) => i !== imageIndex);
+  
+      setFormData(prev => ({ ...prev, variants: newVariants }));
+  }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -296,7 +258,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
           <select
             id="categoryId"
             name="categoryId"
-            value={formData.categoryId}
+            value={formData.category?.id}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             required
@@ -430,7 +392,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
         )}
       </div>
 
-      {/* Variants */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900">Variants</h3>
         {formData.variants.map((variant, variantIndex) => (
@@ -439,15 +400,28 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
               <input
                 type="text"
                 value={variant.name}
+                name='name'
                 onChange={(e) => handleVariantChange(e, variantIndex)}
                 placeholder="Variant Name (e.g., Color, Size)"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
+              <Select
+                value={variant.displayType}
+                onValueChange={(value) => handleVariantChange({ target: { name: 'displayType', value } } as any, variantIndex)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select display type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dropdown">Dropdown</SelectItem>
+                  <SelectItem value="checkbox">Checkbox</SelectItem>
+                </SelectContent>
+              </Select>
               <button type="button" onClick={() => handleRemoveVariant(variantIndex)} className="ml-2 text-sm text-red-600 hover:text-red-800">
                 Remove Variant
               </button>
             </div>
-            {variant?.options?.map((option, optionIndex) => (
+            {variant.options.map((option, optionIndex) => (
               <div key={optionIndex} className="border-t border-gray-200 pt-4 mt-4">
                 <div className="grid grid-cols-2 gap-4 mb-2">
                   <input
@@ -531,7 +505,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
 
       <div className="flex justify-end">
         <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          {product ? 'Update Product' : 'Add Product'}
+          {product ?   'Update Product' : 'Add Product'}
         </button>
       </div>
     </form>

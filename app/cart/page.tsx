@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { VariantOption } from '@/interfaces/product-interfaces'
 import { Button } from '../components/ui/button'
 
 interface CartItem {
@@ -12,6 +13,7 @@ interface CartItem {
   price: number
   image: string
   quantity: number
+  selectedVariants: Record<string, VariantOption>
 }
 
 export default function CartPage() {
@@ -52,6 +54,16 @@ export default function CartPage() {
                 <div className="flex-grow">
                   <h2 className="text-lg font-semibold">{item.name}</h2>
                   <p className="text-gray-600">${item.price.toFixed(2)}</p>
+                  {Object.entries(item.selectedVariants).map(([variantName, option]) => (
+                    <p key={variantName} className="text-sm text-gray-500">
+                      {variantName}: {option.value}
+                      {option.priceAdjustment !== 0 && (
+                        <span className={option.priceAdjustment > 0 ? 'text-green-600' : 'text-red-600'}>
+                          {' '}({option.priceAdjustment > 0 ? '+' : '-'}${Math.abs(option.priceAdjustment).toFixed(2)})
+                        </span>
+                      )}
+                    </p>
+                  ))}
                   <div className="flex items-center space-x-2 mt-2">
                     <label htmlFor={`quantity-${item.id}`} className="sr-only">Quantity</label>
                     <input
@@ -60,7 +72,7 @@ export default function CartPage() {
                       value={item.quantity}
                       min="1"
                       onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-                      className="w-16 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      className="w-16 dark:text-black p-1 rounded-md border-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                     />
                     <Button variant="outline" onClick={() => removeItem(item.id)}>Remove</Button>
                   </div>
@@ -71,7 +83,10 @@ export default function CartPage() {
           </div>
           <div className="mt-8 flex justify-between items-center">
             <p className="text-2xl font-bold">Total: ${total.toFixed(2)}</p>
+            <Link href="/checkout">
+            
             <Button size="lg">Proceed to Checkout</Button>
+            </Link>
           </div>
         </>
       )}

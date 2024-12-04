@@ -1,14 +1,23 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { PlusIcon, Pencil, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { PlusIcon, Pencil, Trash2, ChevronLeft, ChevronRight, X, Link } from 'lucide-react'
 import { Category, Product, ProductDTO } from '@/interfaces/product-interfaces'
 import ProductForm from '@/app/components/product-form'
 import toast, { Toaster } from 'react-hot-toast'
 import { ConfirmationAlert } from '@/app/components/ui/confirmation-alert'
 
 // Custom Button Component (updated with new color scheme)
-const Button = ({ children, onClick, variant = "primary", type = "button", disabled = false }) => {
+interface ButtonProps {
+  children: React.ReactNode
+  onClick?: () => void
+  variant?: 'primary' | 'secondary' | 'danger'
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
+}
+
+const Button: React.FC<ButtonProps> = ({ children, onClick, variant = "primary", type = "button", disabled = false }) => {
+
   const baseStyle = "px-4 py-2 rounded-md font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
   const variantStyles = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500",
@@ -29,7 +38,14 @@ const Button = ({ children, onClick, variant = "primary", type = "button", disab
 }
 
 // Custom Modal Component (unchanged)
-const Modal = ({ isOpen, onClose, title, children }) => {
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+}
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null
 
   return (
@@ -48,7 +64,12 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 }
 
 // Custom Pagination Component (unchanged)
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+interface PaginationProps {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}
+const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <div className="flex justify-center items-center space-x-2 mt-4">
       <Button
@@ -106,33 +127,7 @@ GetProducts();
       toast.error('An error occurred while fetching categories')
     }
   }
-const convertToProductDTO = (product: Product): ProductDTO => {
-  return {
-    name: product.name,
-    description: product.description,
-    price: Number(product.price),
-    sku: product.sku,
-    stock: Number(product.stock),
-    brand: product.brand,
-    categoryId: product.category.id,
-    slug: product.slug,
-    isActive: product.isActive,
-    seo: {
-      metaTitle: product.seo.metaTitle,
-      metaDescription: product.seo.metaDescription,
-      metaKeywords: product.seo.metaKeywords || "",
-      canonicalUrl: product.seo.canonicalUrl
-    },
-    primaryImage: {
-      url: product.primaryImage.url,
-      altText: product.primaryImage.altText
-    },
-    images: product.images.map(image => ({
-      url: image.url,
-      altText: image.altText
-    }))
-  }
-}
+
 const GetProducts = async () =>{
   const method = 'GET';
   const url = 'https://localhost:7007/api/Product/';
@@ -150,10 +145,8 @@ const GetProducts = async () =>{
     toast.error(`Failed to fetch product. Server response: ${errorText}`, { duration: 20000 });
   }
 }
-const deleteProduct = async () => {
 
-}
-const handleAddOrUpdateProduct = async (productDto: ProductDTO, operation: string) => {
+const handleAddOrUpdateProduct = async (product: ProductDTO, operation: string) : Promise<void> =>  {
   try {
     console.log("Operation is handleAddOrUpdate is :",operation);
     const method = 'POST' ;
@@ -164,7 +157,7 @@ const handleAddOrUpdateProduct = async (productDto: ProductDTO, operation: strin
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...productDto, operation }),
+      body: JSON.stringify({ ...product, operation }),
     });
 
     if (res.ok) {
@@ -232,14 +225,14 @@ const handleAddOrUpdateProduct = async (productDto: ProductDTO, operation: strin
     }
   }
   return (
-    <div className="container mx-auto p-4">
+    <div className="container bg-white rounded-md mx-auto p-4">
        <ConfirmationAlert
         isOpen={isAlertOpen}
         onClose={() => setIsAlertOpen(false)}
         onConfirm={handleConfirmDelete}
         message="Are you sure you want to delete this product? This action cannot be undone."
       />
-    <Toaster position="top-right" />
+
       <h1 className="text-2xl font-bold mb-4">Product Management</h1>
       
       <div className="mb-4 flex justify-between items-center">
@@ -248,7 +241,10 @@ const handleAddOrUpdateProduct = async (productDto: ProductDTO, operation: strin
           placeholder="Search products..."
           className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        <Button onClick={() => setIsAddProductModalOpen(true)}>
+      <Link href='products/add-product'>
+      
+      </Link>
+        <Button onClick={() =>{ setIsAddProductModalOpen(true)}}>
           <PlusIcon className="inline-block mr-2 h-4 w-4" /> Add New Product
         </Button>
       </div>

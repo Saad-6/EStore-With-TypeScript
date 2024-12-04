@@ -1,13 +1,19 @@
 'use client'
+
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline'
+import { useTheme } from '../lib/theme-context'
 import { SearchModal } from './search-modal'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [announcement, setAnnouncement] = useState('🎉 Summer Sale! Use code SUMMER20 for 20% off!')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const { theme, toggleTheme } = useTheme()
+  const router = useRouter()
+
   useEffect(() => {
     const announcements = [
       '🎉 Summer Sale! Use code SUMMER20 for 20% off!',
@@ -22,10 +28,14 @@ export default function Navbar() {
     return () => clearInterval(intervalId)
   }, [])
 
+  const handleSearch = (searchTerm: string) => {
+    router.push(`/search-results?q=${encodeURIComponent(searchTerm)}`)
+  }
+
   return (
-    <nav className="bg-white shadow-md">
+    <nav className="bg-white dark:bg-gray-800 shadow-md">
       {/* Announcement Bar */}
-      <div className="bg-slate-900 px-4 py-2 text-white overflow-hidden">
+      <div className="bg-slate-900 dark:bg-slate-700 px-4 py-2 text-white overflow-hidden">
         <p className="text-center text-sm font-medium whitespace-nowrap animate-marquee">
           {announcement}
         </p>
@@ -37,7 +47,7 @@ export default function Navbar() {
           <div className="flex">
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-2xl font-bold text-blue-600">
+              <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 EStore
               </Link>
             </div>
@@ -45,39 +55,42 @@ export default function Navbar() {
 
           {/* Center Links - Hidden on mobile */}
           <div className="hidden sm:flex sm:space-x-8 items-center">
-            <Link href="/products" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
+            <Link href="/products" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium">
               Products
             </Link>
-            <Link href="/categories" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
+            <Link href="/categories" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium">
               Categories
             </Link>
-            <Link href="/deals" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
+            <Link href="/deals" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium">
               Deals
             </Link>
           </div>
 
           {/* Right Icons */}
           <div className="flex items-center space-x-4">
-            <button className="text-gray-700 hover:text-blue-600" onClick={() => setIsSearchOpen(true)}>
+            <button className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400" onClick={() => setIsSearchOpen(true)}>
               <MagnifyingGlassIcon className="h-6 w-6" />
             </button>
             <Link href="/cart">
-            <button className="text-gray-700 hover:text-blue-600">
-              <ShoppingCartIcon className="h-6 w-6" />
-            </button>
+              <button className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                <ShoppingCartIcon className="h-6 w-6" />
+              </button>
             </Link>
             <Link href="/profile">
-            <button className="text-gray-700 hover:text-blue-600">
-              <UserIcon className="h-6 w-6" />
-            </button>
+              <button className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                <UserIcon className="h-6 w-6" />
+              </button>
             </Link>
+            <button onClick={toggleTheme} className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+              {theme === 'dark' ? <SunIcon className="h-6 w-6" /> : <MoonIcon className="h-6 w-6" />}
+            </button>
           </div>
 
           {/* Mobile menu button */}
           <div className="sm:hidden flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600"
             >
               <span className="sr-only">Open main menu</span>
               {isMenuOpen ? (
@@ -97,18 +110,22 @@ export default function Navbar() {
       {/* Mobile menu, show/hide based on menu state */}
       <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'}`}>
         <div className="px-2 pt-2 pb-3 space-y-1">
-          <Link href="/products" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+          <Link href="/products" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 block px-3 py-2 text-base font-medium">
             Products
           </Link>
-          <Link href="/categories" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+          <Link href="/categories" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 block px-3 py-2 text-base font-medium">
             Categories
           </Link>
-          <Link href="/deals" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+          <Link href="/deals" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 block px-3 py-2 text-base font-medium">
             Deals
           </Link>
         </div>
       </div>
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+        onSearch={handleSearch}
+      />
     </nav>
   )
 }

@@ -46,7 +46,7 @@ export default function CartItem({ id, name, price, image, quantity, onUpdateQua
           >
             <Minus className="h-4 w-4" />
           </Button>
-          <span className="mx-2 w-8 text-center">{itemQuantity}</span>
+          <span className="mx-2 w-8 text-center ">{itemQuantity}</span>
           <Button
             variant="outline"
             size="icon"

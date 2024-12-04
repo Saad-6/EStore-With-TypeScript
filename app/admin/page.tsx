@@ -22,7 +22,12 @@ import {
   UserGroupIcon, 
 } from '@heroicons/react/24/outline'
 import { TrendingUpIcon } from 'lucide-react'
-
+interface StatCardProps {
+  value: number | string;  // Adjust the type based on what value can hold
+  icon: React.ComponentType;  // Type for the Icon component
+  change: number;  // Adjust the type based on what change can hold
+  title: string;
+}
 // Mock data for charts (unchanged)
 const salesData = [
   { name: 'Jan', sales: 4000 },
@@ -42,7 +47,7 @@ const categoryData = [
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
 
-const StatCard = ({ value, icon: Icon, change,title }) => (
+const StatCard: React.FC<StatCardProps> = ({ value, icon: Icon, change, title }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -51,7 +56,10 @@ const StatCard = ({ value, icon: Icon, change,title }) => (
   >
     <div className="flex items-center justify-between mb-4">
       <div className="text-xl font-semibold text-gray-200">{title}</div>
-      <Icon className="w-8 h-8 text-blue-400" />
+      <div className="w-8 h-8 text-blue-400">
+
+      <Icon  />
+      </div>
     </div>
     <div className="text-3xl font-bold mb-2 text-white">{value}</div>
     <div className={`flex items-center ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -63,7 +71,7 @@ const StatCard = ({ value, icon: Icon, change,title }) => (
 
 export default function AdminDashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-white p-6 rounded-md">
       <motion.h1 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

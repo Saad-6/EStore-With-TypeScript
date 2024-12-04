@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect } from 'react'
 import { PlusIcon, Pencil, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react'
@@ -15,7 +15,15 @@ interface Category {
 const API_BASE_URL = 'https://localhost:7007/api'
 
 // Custom Button Component
-const Button = ({ children, onClick, variant = "primary", type = "button", disabled = false }) => {
+interface ButtonProps {
+  children: React.ReactNode
+  onClick?: () => void
+  variant?: 'primary' | 'secondary' | 'danger'
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
+}
+
+const Button: React.FC<ButtonProps> = ({ children, onClick, variant = "primary", type = "button", disabled = false }) => {
   const baseStyle = "px-4 py-2 rounded-md font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
   const variantStyles = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500",
@@ -36,7 +44,14 @@ const Button = ({ children, onClick, variant = "primary", type = "button", disab
 }
 
 // Custom Modal Component
-const Modal = ({ isOpen, onClose, title, children }) => {
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+}
+
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null
 
   return (
@@ -55,7 +70,13 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 }
 
 // Custom Pagination Component
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+interface PaginationProps {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}
+
+const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <div className="flex justify-center items-center space-x-2 mt-4">
       <Button
@@ -77,7 +98,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   )
 }
 
-export default function AdminCategoriesPage() {
+const AdminCategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false)
@@ -127,6 +148,7 @@ export default function AdminCategoriesPage() {
       })
       if (response.ok) {
         const addedCategory = await response.json()
+        console.log(addedCategory);
         setCategories([...categories, addedCategory])
         setIsAddCategoryModalOpen(false)
         setNewCategory({ name: '', description: '', thumbNailUrl: '' })
@@ -168,8 +190,8 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <Toaster position="top-right" />
+    <div className="container p-4 bg-white rounded-md">
+ 
       <h1 className="text-2xl font-bold mb-4">Category Management</h1>
       
       <div className="mb-4 flex justify-between items-center">
@@ -272,3 +294,5 @@ export default function AdminCategoriesPage() {
     </div>
   )
 }
+
+export default AdminCategoriesPage

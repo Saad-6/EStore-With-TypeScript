@@ -82,7 +82,7 @@ export default function UserReviews() {
               </div>
               <span className="text-sm text-gray-500">{formatDate(review.createdAt)}</span>
             </div>
-            <p className="text-gray-700 text-sm">{review.comment}</p>
+            <p className="text-gray-700 text-sm dark:text-gray-300">{review.comment}</p>
           </div>
         ))}
       </div>

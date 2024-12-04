@@ -11,7 +11,8 @@ import {
   CogIcon, 
   ShoppingBagIcon,
 } from '@heroicons/react/24/outline'
-import { FolderIcon, MenuIcon, XIcon } from 'lucide-react'
+import { FolderIcon, Home, MenuIcon, NotebookPenIcon, NotebookTextIcon, NotepadTextDashed, XIcon } from 'lucide-react'
+import { DesktopIcon } from '@radix-ui/react-icons'
 
 const menuItems = [
   { name: 'Dashboard', icon: ChartBarIcon, href: '/admin' },
@@ -19,7 +20,9 @@ const menuItems = [
   { name: 'Products', icon: CubeIcon, href: '/admin/products' },
   { name: 'Orders', icon: ShoppingBagIcon, href: '/admin/orders' },
   { name: 'Customers', icon: UserGroupIcon, href: '/admin/customers' },
-  { name: 'Settings', icon: CogIcon, href: '/admin/settings' },
+  { name: 'Home Page', icon: Home, href: '/admin/settings' },
+  { name: 'Base Layout', icon: DesktopIcon, href: '/admin/layout-settings' },
+  { name: 'Logs', icon : NotebookTextIcon, href: '/admin/logs' },
 ]
 
 export function AdminMenu() {

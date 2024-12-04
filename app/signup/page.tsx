@@ -1,12 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Label } from '../components/ui/label'
 import { Input } from '../components/ui/input'
 import { Checkbox } from '../components/ui/checkbox'
 import { Button } from '../components/ui/button'
+import toast, { Toaster } from 'react-hot-toast'
+import { useAuth } from '../lib/auth'
 
 export default function SignupPage() {
   const [name, setName] = useState('')
@@ -14,14 +16,64 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/')
+    }
+  }, [isAuthenticated, router])
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically handle the signup logic
-    console.log('Signup attempt with:', { name, email, password, confirmPassword, agreeTerms })
-    // For now, we'll just redirect to the home page
-    router.push('/')
+    setError('') // Reset error message
+
+    // Basic validations
+    if (!agreeTerms) {
+      setError('You must agree to the terms and conditions.')
+      return
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.')
+      return
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    // Create a sign-up request payload
+    const signUpData = {
+      email,
+      password,
+      confirmPassword,
+    }
+
+    try {
+      // Send the sign-up request to the backend
+      console.log(signUpData)
+      const response = await fetch('https://localhost:7007/api/Auth/Register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signUpData),
+      })
+
+      // Handle the response
+      const data = await response.json()
+      if (!response.ok) {
+        setError(data.message || 'User registration failed')
+        toast.success('User registered successfully!')
+      } else {
+        
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Error during sign up:', error)
+      setError('An error occurred while signing up. Please try again.')
+    }
   }
 
   return (
@@ -29,6 +81,7 @@ export default function SignupPage() {
       <div className="max-w-md mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center">Create an Account</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <div className="text-red-600 text-center mb-4">{error}</div>}
           <div>
             <Label htmlFor="name">Full Name</Label>
             <Input

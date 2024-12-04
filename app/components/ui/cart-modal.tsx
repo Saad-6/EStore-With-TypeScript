@@ -1,40 +1,112 @@
 import { XIcon } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { createPortal } from 'react-dom'
+import { Button } from './button'
+import { Input } from './input'
+import { Label } from './label'
+
+import { Product, VariantOption } from '@/interfaces/product-interfaces'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  children: React.ReactNode
+  product: Product
+  quantity: number
+  selectedVariants: Record<string, VariantOption>
+  onQuantityChange: (quantity: number) => void
+  onVariantChange: (variantName: string, value: string) => void
+  onConfirm: () => void
 }
 
-export function Modal({ isOpen, onClose, children }: ModalProps) {
-  const [isBrowser, setIsBrowser] = useState(false)
+export function Modal({
+  isOpen,
+  onClose,
+  product,
+  quantity,
+  selectedVariants,
+  onQuantityChange,
+  onVariantChange,
+  onConfirm
+}: ModalProps) {
+  if (!isOpen) return null
 
-  useEffect(() => {
-    setIsBrowser(true)
-  }, [])
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuantity = parseInt(e.target.value, 10)
+    if (!isNaN(newQuantity) && newQuantity > 0) {
+      onQuantityChange(newQuantity)
+    }
+  }
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
-      <div className="relative w-auto max-w-3xl mx-auto my-6">
-        <div className="relative flex flex-col w-full bg-white border-0 rounded-lg shadow-lg outline-none focus:outline-none">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto">
+        <div className="absolute top-0 right-0 pt-4 pr-4">
           <button
-            className="absolute top-0 right-0 p-2 m-2 text-gray-400 hover:text-gray-500"
             onClick={onClose}
+            className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            <XIcon className="w-6 h-6" />
+            <span className="sr-only">Close</span>
+            <XIcon className="h-6 w-6" aria-hidden="true" />
           </button>
-          {children}
+        </div>
+        <div className="p-6">
+          <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Confirm Add to Cart - <span>{product.name}</span></h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="quantity" >
+                Quantity
+              </Label>
+              <Input
+                type="number"
+                id="quantity"
+                name="quantity"
+                min="1"
+                value={quantity}
+                onChange={handleQuantityChange}
+                className="mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white dark:text-black"
+              />
+            </div>
+            {product.variants && product.variants.map((variant) => (
+              <div key={variant.id}>
+                <Label htmlFor={`variant-${variant.id}`}>
+                  {variant.name}
+                </Label>
+                <Select
+                  value={selectedVariants[variant.name]?.value || ''}
+                  onValueChange={(value) => onVariantChange(variant.name, value)}
+                >
+                  <SelectTrigger className="w-full mt-1 dark:text-black">
+                    <SelectValue placeholder={`Select ${variant.name}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {variant.options.map((option) => (
+                      <SelectItem key={option.id} value={option.value}>
+                        {option.value}
+                        {option.priceAdjustment !== 0 && (
+                          <span className={`ml-2 ${option.priceAdjustment > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {option.priceAdjustment > 0 ? '+' : '-'}${Math.abs(option.priceAdjustment).toFixed(2)}
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex justify-end space-x-3">
+            <Button variant="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="outline" onClick={onConfirm}>
+              Add to Cart
+            </Button>
+          </div>
         </div>
       </div>
-      <div className="fixed inset-0 bg-black opacity-25"></div>
     </div>
   )
 
-  if (isBrowser) {
-    return isOpen ? createPortal(modalContent, document.body) : null
-  } else {
-    return null
-  }
+  return createPortal(modalContent, document.body)
 }

@@ -19,42 +19,31 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { toast } from '@/hooks/use-toast'
-import { Input } from '@/app/components/ui/input'
 
+import { toast } from '@/hooks/use-toast'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/app/components/ui/input'
+import { ColorPicker } from '@/app/components/ui/Color-Picker'
 
 
 const formSchema = z.object({
-  // Banner
   bannerText: z.string().min(1, "Banner text is required"),
   bannerMoving: z.boolean(),
   bannerBackgroundColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   bannerTextColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
-  
-  // Navbar
   navbarBackgroundColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   navbarTextColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
-  
-  // Footer
   footerBackgroundColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   footerTextColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
-  
-  // Body
   bodyBackgroundColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   bodyTextColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
-  
-  // Buttons
   primaryButtonColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   primaryButtonTextColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   secondaryButtonColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
   secondaryButtonTextColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
-  
-  // Typography
   headingFont: z.string().min(1, "Heading font is required"),
   bodyFont: z.string().min(1, "Body font is required"),
-  
-  // Layout
   sidebarPosition: z.enum(["left", "right"]),
   contentWidth: z.enum(["full", "contained"]),
 })
@@ -121,11 +110,11 @@ export default function DesignCustomizationPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Design Customization</h1>
+      <h1 className="text-4xl font-bold mb-8">Design Customization</h1>
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Tabs defaultValue="banner" >
-            <TabsList>
+            <TabsList >
               <TabsTrigger value="banner">Banner</TabsTrigger>
               <TabsTrigger value="navbar">Navbar</TabsTrigger>
               <TabsTrigger value="footer">Footer</TabsTrigger>
@@ -135,342 +124,334 @@ export default function DesignCustomizationPage() {
               <TabsTrigger value="layout">Layout</TabsTrigger>
             </TabsList>
             <TabsContent value="banner">
-              <FormField
-                control={form.control}
-                name="bannerText"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Banner Text</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter banner text" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bannerMoving"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Moving Banner
-                      </FormLabel>
-                      <FormDescription>
-                        Enable moving text for the banner
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bannerBackgroundColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Banner Background Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#000000" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bannerTextColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Banner Text Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#FFFFFF" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="bannerText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Banner Text</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter banner text" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bannerMoving"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Moving Banner
+                          </FormLabel>
+                          <FormDescription>
+                            Enable moving text for the banner
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bannerBackgroundColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Banner Background Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bannerTextColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Banner Text Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="navbar">
-              <FormField
-                control={form.control}
-                name="navbarBackgroundColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Navbar Background Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#FFFFFF" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="navbarTextColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Navbar Text Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#000000" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="navbarBackgroundColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Navbar Background Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="navbarTextColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Navbar Text Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="footer">
-              <FormField
-                control={form.control}
-                name="footerBackgroundColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Footer Background Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#F3F4F6" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="footerTextColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Footer Text Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#4B5563" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="footerBackgroundColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Footer Background Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="footerTextColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Footer Text Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="body">
-              <FormField
-                control={form.control}
-                name="bodyBackgroundColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Body Background Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#FFFFFF" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bodyTextColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Body Text Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#1F2937" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="bodyBackgroundColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Body Background Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bodyTextColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Body Text Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="buttons">
-              <FormField
-                control={form.control}
-                name="primaryButtonColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Button Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#3B82F6" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="primaryButtonTextColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Button Text Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#FFFFFF" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="secondaryButtonColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secondary Button Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#9CA3AF" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="secondaryButtonTextColor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Secondary Button Text Color</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center space-x-2">
-                        <Input type="color" {...field} className="w-12 h-12 p-1 rounded-md" />
-                        <Input {...field} placeholder="#FFFFFF" className="flex-grow" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="primaryButtonColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Primary Button Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="primaryButtonTextColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Primary Button Text Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="secondaryButtonColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secondary Button Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="secondaryButtonTextColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secondary Button Text Color</FormLabel>
+                        <FormControl>
+                          <ColorPicker {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="typography">
-              <FormField
-                control={form.control}
-                name="headingFont"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Heading Font</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Inter" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="bodyFont"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Body Font</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Roboto" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="headingFont"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Heading Font</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Inter" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bodyFont"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Body Font</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Roboto" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="layout">
-              <FormField
-                control={form.control}
-                name="sidebarPosition"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sidebar Position</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="left" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Left
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="right" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Right
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contentWidth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Content Width</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="full" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Full Width
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="contained" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Contained
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Card>
+                <CardContent className="space-y-4 pt-6">
+                  <FormField
+                    control={form.control}
+                    name="sidebarPosition"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sidebar Position</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="left" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Left
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="right" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Right
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contentWidth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Content Width</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="full" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Full Width
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="contained" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                Contained
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </form>

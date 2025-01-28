@@ -9,15 +9,18 @@ import { Button } from '../components/ui/button'
 import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '../lib/auth'
 import toast, { Toaster } from 'react-hot-toast'
+import { BouncingDotsLoader, SpinningCircleLoader } from './ui/Loaders'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const router = useRouter()
-  const { isAuthenticated, login } = useAuth()
-
+  const { isAuthenticated,userRole, login } = useAuth()
+  const[isLoading,setIsLoading] = useState(false);
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userRole ==='Admin') {
+      router.push('/admin')
+    }else if(isAuthenticated && userRole !=="Admin"){
       router.push('/')
     }
   }, [isAuthenticated, router])
@@ -43,7 +46,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    setIsLoading(true);
     try {
       const response = await fetch('https://localhost:7007/api/Auth/Login', {
         method: 'POST',
@@ -55,14 +58,11 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data: ApiResponse = await response.json()
-        console.log("data of type response:", data);
 
         // Use the login function from useAuth hook
         login(data.token)
 
         const decodedToken: Token = jwtDecode(data.token)
-        console.log("data of type decodedToken:", decodedToken);
-        console.log("Is auth after a successful api result", isAuthenticated);
 
         // Check if the user is an admin and redirect accordingly
         if (decodedToken.role === 'Admin') {
@@ -72,16 +72,18 @@ export default function LoginPage() {
         }
       } else {
         toast.error('Email or Password Invalid');
-        console.error('Login failed');
       }
     } catch (error) {
       console.error('Error logging in:', error);
       toast.error('Connection to the server could not be established');
     }
+    setIsLoading(false);
   }
 
   return (
+    
     <div className="container mx-auto px-4 py-8">
+    
       <div className="max-w-md mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center">Login to Your Account</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,8 +110,15 @@ export default function LoginPage() {
             />
           </div>
           <Button type="submit" className="w-full">
-            Login
-          </Button>
+  {isLoading ? (
+    <div>
+      <BouncingDotsLoader color="white" />
+    </div>
+  ) : (
+    <div>Login</div>
+  )}
+</Button>
+
         </form>
         <div className="mt-4 text-center">
           <Link href="/forgot-password" className="text-blue-600 hover:underline">

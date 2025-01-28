@@ -1,6 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
+
+import { Button } from "@/components/ui/button"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useToast } from '@/hooks/use-toast'
 
 interface LogEntity {
   id: number
@@ -8,18 +23,36 @@ interface LogEntity {
   dateTime: string
 }
 
+const themes = {
+  light: {
+    background: 'bg-white',
+    text: 'text-gray-900',
+    border: 'border-gray-200',
+  },
+  dark: {
+    background: 'bg-gray-900',
+    text: 'text-white',
+    border: 'border-gray-700',
+  },
+  blue: {
+    background: 'bg-blue-100',
+    text: 'text-blue-900',
+    border: 'border-blue-200',
+  },
+}
+
+type Theme = keyof typeof themes
+
 export default function AdminLogsPage() {
   const [logs, setLogs] = useState<LogEntity[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [theme, setTheme] = useState<Theme>('light')
+  const { toast } = useToast()
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     try {
       setLoading(true)
-      // Replace with your actual API endpoint
-      const response = await fetch(`https://localhost:7007/api/Log`)
+      const response = await fetch('https://localhost:7007/api/Log')
       if (!response.ok) {
         throw new Error('Failed to fetch logs')
       }
@@ -27,81 +60,95 @@ export default function AdminLogsPage() {
       setLogs(data)
       setLoading(false)
     } catch (err) {
-      setError('Failed to fetch logs. Please try again.')
       setLoading(false)
-      showToast('Failed to fetch logs', 'error')
+      toast({
+        title: "Error",
+        description: "Failed to fetch logs. Please try again.",
+        variant: "destructive",
+      })
     }
-  }
+  }, [toast])
 
   useEffect(() => {
     fetchLogs()
-  }, [page])
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }
+  }, [fetchLogs])
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
+    return format(new Date(dateString), 'PPpp')
+  }
+
+  const handleClearLogs = async () => {
+    try {
+      const response = await fetch('https://localhost:7007/api/Log', {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to clear logs')
+      }
+      toast({
+        title: "Success",
+        description: "Logs have been cleared.",
+      })
+      fetchLogs()
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to clear logs. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">Admin Logs</h1>
-      {loading ? (
-        <p className="text-center">Loading...</p>
-      ) : error ? (
-        <p className="text-red-500 text-center">{error}</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-2 px-4 border-b">ID</th>
-                  <th className="py-2 px-4 border-b">Message</th>
-                  <th className="py-2 px-4 border-b">Date & Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border-b">{log.id}</td>
-                    <td className="py-2 px-4 border-b">{log.message}</td>
-                    <td className="py-2 px-4 border-b">{formatDate(log.dateTime)}</td>
+    <div className={`container mx-auto px-4 py-8 ${themes[theme].background} ${themes[theme].text}`}>
+      <Card className={`mb-8 ${themes[theme].background} ${themes[theme].border}`}>
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold">Admin Logs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <Select value={theme} onValueChange={(value: Theme) => setTheme(value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light Theme</SelectItem>
+                <SelectItem value="dark">Dark Theme</SelectItem>
+                <SelectItem value="blue">Blue Theme</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleClearLogs} variant="destructive">
+              Clear Logs
+            </Button>
+          </div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className={`w-full border-collapse ${themes[theme].border}`}>
+                <thead>
+                  <tr className={`${themes[theme].background} ${themes[theme].border}`}>
+                    <th className="p-2 text-left">ID</th>
+                    <th className="p-2 text-left">Message</th>
+                    <th className="p-2 text-right">Date & Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 flex justify-between items-center">
-            <button
-              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              disabled={page === 1}
-              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-            >
-              Previous
-            </button>
-            <span>Page {page}</span>
-            <button
-              onClick={() => setPage((prev) => prev + 1)}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 px-4 py-2 rounded ${
-            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          } text-white`}
-        >
-          {toast.message}
-        </div>
-      )}
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr key={log.id} className={`border-b ${themes[theme].border}`}>
+                      <td className="p-2">{log.id}</td>
+                      <td className="p-2">{log.message}</td>
+                      <td className="p-2 text-right">{formatDate(log.dateTime)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

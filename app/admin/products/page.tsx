@@ -1,11 +1,12 @@
 "use client"
-
 import React, { useEffect, useState } from 'react'
 import { PlusIcon, Pencil, Trash2, ChevronLeft, ChevronRight, X, Link } from 'lucide-react'
 import { Category, Product, ProductDTO } from '@/interfaces/product-interfaces'
 import ProductForm from '@/app/components/product-form'
 import toast, { Toaster } from 'react-hot-toast'
 import { ConfirmationAlert } from '@/app/components/ui/confirmation-alert'
+import { BouncingDotsLoader } from '@/app/components/ui/Loaders'
+import { useRouter } from 'next/navigation'
 
 // Custom Button Component (updated with new color scheme)
 interface ButtonProps {
@@ -100,9 +101,13 @@ export default function AdminProductPage() {
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const[isLoading,setIsLoading] = useState(false);
   const [deleteProductId,setDeleteProductId] = useState(0);
+  const [router, setRouter] = useState<ReturnType<typeof useRouter> | null>(useRouter)
+
 useEffect(()=>{
-fetchCategories();
+  fetchCategories();
+
 GetProducts();
 },[]);
 
@@ -114,6 +119,7 @@ GetProducts();
   const totalPages = Math.ceil(products.length / productsPerPage)
 
   const fetchCategories = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/Category`)
       if (response.ok) {
@@ -126,9 +132,11 @@ GetProducts();
       console.error('Error fetching categories:', error)
       toast.error('An error occurred while fetching categories')
     }
+    setIsLoading(false);
   }
 
 const GetProducts = async () =>{
+  setIsLoading(true);
   const method = 'GET';
   const url = 'https://localhost:7007/api/Product/';
   const res = await fetch(url, {
@@ -144,6 +152,7 @@ const GetProducts = async () =>{
     console.error("Failed to fetch product:", errorText);
     toast.error(`Failed to fetch product. Server response: ${errorText}`, { duration: 20000 });
   }
+  setIsLoading(false);
 }
 
 const handleAddOrUpdateProduct = async (product: ProductDTO, operation: string) : Promise<void> =>  {
@@ -224,6 +233,13 @@ const handleAddOrUpdateProduct = async (product: ProductDTO, operation: string) 
       });
     }
   }
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+      <BouncingDotsLoader color="primary" />
+    </div>
+    )
+  }
   return (
     <div className="container bg-white rounded-md mx-auto p-4">
        <ConfirmationAlert
@@ -244,7 +260,9 @@ const handleAddOrUpdateProduct = async (product: ProductDTO, operation: string) 
       <Link href='products/add-product'>
       
       </Link>
-        <Button onClick={() =>{ setIsAddProductModalOpen(true)}}>
+        <Button //onClick={() =>{ setIsAddProductModalOpen(true)}}
+          onClick={()=>router?.push('products/add-product')}
+          >
           <PlusIcon className="inline-block mr-2 h-4 w-4" /> Add New Product
         </Button>
       </div>

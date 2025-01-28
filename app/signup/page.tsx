@@ -64,15 +64,17 @@ export default function SignupPage() {
       // Handle the response
       const data = await response.json()
       if (!response.ok) {
-        setError(data.message || 'User registration failed')
-        toast.success('User registered successfully!')
+        console.log(data)
+        setError(data.message || 'User registration failed!');
+        toast.error(data.message || 'User registration failed!');
       } else {
-        
-        router.push('/')
+        toast.success('User registered successfully!');
+        router.push('/');
       }
     } catch (error) {
-      console.error('Error during sign up:', error)
-      setError('An error occurred while signing up. Please try again.')
+      console.error('Error during sign up:', error);
+      setError('An error occurred while signing up. Please try again.');
+      toast.error('An error occurred while signing up. Please try again.');
     }
   }
 

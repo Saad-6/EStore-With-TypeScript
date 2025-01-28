@@ -5,22 +5,22 @@ import { useRouter } from 'next/navigation'
 
 import { AdminMenu } from '../components/admin-menu'
 import { useAuth } from '../lib/auth'
+import { BouncingDotsLoader } from '../components/ui/Loaders'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { isAuthenticated, userRole, checkAuthStatus } = useAuth()
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Use a try-catch for more robust error handling
+  
   useEffect(() => {
     const initAuth = async () => {
       try {
         await checkAuthStatus() // Ensure auth state is up-to-date
-        setIsLoading(false)
       } catch (error) {
         console.error('Error checking auth status:', error)
-        setIsLoading(false) // Stop loading even if there's an error
       }
+      setIsLoading(false) 
     }
 
     initAuth()
@@ -29,23 +29,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Protect the admin route based on the user authentication state
   useEffect(() => {
     if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push('/not-found')
-      } else if (userRole !== 'Admin') {
+      if (isAuthenticated && userRole === 'Admin') {
+        router.push('/admin')
+      } else{
         router.push('/not-found');
       }
+
     }
   }, [isAuthenticated, userRole, isLoading, router])
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-xl font-semibold">Loading...</p>
-      </div>
+      <div className="flex justify-center items-center min-h-screen">
+      <BouncingDotsLoader color="primary" />
+    </div>
     )
   }
-
   // Unauthorized state
   if (!isAuthenticated || userRole !== 'Admin') {
     return null

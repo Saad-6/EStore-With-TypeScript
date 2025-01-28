@@ -179,7 +179,7 @@ export default function ProductsPage({ initialName, initialDescription }: Produc
                   <ModernProductCard
                     name={product.name}
                     price={product.price}
-                    image={product.primaryImage.url}
+                    image={product?.primaryImage?.url || ''}
                     category={product.category.name}
                   />
                 </motion.div>

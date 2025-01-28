@@ -12,7 +12,6 @@ import { TrendingUpIcon } from 'lucide-react'
 import AnimatedText from './components/ui/AnimatedText'
 import { HomePageLayout, HeroCarouselSlide, SimpleProductDTO, SimpleCategoryDTO } from '@/interfaces/product-interfaces'
 
-
 const AnimatedSection = ({ children }: { children: React.ReactNode }) => {
   const controls = useAnimation()
   const [ref, inView] = useInView({
@@ -53,18 +52,18 @@ const ProductCard = ({ name, price, imageUrl, rating, reviews, description }: an
     >
       <div className="relative h-64">
         <Image
-          src={imageUrl}
-          alt={name}
+          src={imageUrl || '/placeholder.png'}
+          alt={name || 'Product'}
           layout="fill"
           objectFit="cover"
         />
       </div>
       <div className="p-4">
-        <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{name}</h3>
-        <p className={`text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{description}</p>
+        <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{name || 'Unnamed Product'}</h3>
+        <p className={`text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{description || 'No description available'}</p>
         <div className="flex justify-between items-center">
-          <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>${price?.toFixed(2)}</span>
-          {rating && reviews && (
+          <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>${price?.toFixed(2) || 'N/A'}</span>
+          {(rating !== null && rating !== undefined) && (reviews !== null && reviews !== undefined) && (
             <div className="flex items-center">
               <span className={`text-sm mr-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{rating}</span>
               <StarIcon className="h-5 w-5 text-yellow-400" />
@@ -136,7 +135,7 @@ export default function Home() {
           {layout.settings.heroCarousel.map((slide: HeroCarouselSlide, index: number) => (
             <div key={index} className="relative h-[60vh] md:h-[80vh]">
               <Image
-                src={slide.image || ''}
+                src={slide.image || '/placeholder.png'}
                 alt={`Hero ${index + 1}`}
                 layout="fill"
                 objectFit="cover"
@@ -145,17 +144,17 @@ export default function Home() {
                 <div className="text-center">
                   <AnimatedText>
                     <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                      {slide.title}
+                      {slide.title || 'Welcome'}
                     </h1>
                   </AnimatedText>
                   <AnimatedText>
                     <p className="text-xl md:text-2xl text-white mb-8">
-                      {slide.subtitle}
+                      {slide.subtitle || 'Discover our amazing products'}
                     </p>
                   </AnimatedText>
                   <AnimatedText>
                     <button className="bg-blue-600 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-blue-700 transition duration-300">
-                      {slide.buttonText}
+                      {slide.buttonText || 'Shop Now'}
                     </button>
                   </AnimatedText>
                 </div>
@@ -210,13 +209,13 @@ export default function Home() {
                     transition={{ duration: 0.3 }}
                   >
                     <Image
-                      src={category.imageUrl}
-                      alt={category.name}
+                      src={category.imageUrl || '/placeholder.png'}
+                      alt={category.name || 'Category'}
                       layout="fill"
                       objectFit="cover"
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center transition-opacity duration-300 hover:bg-opacity-60">
-                      <h3 className="text-2xl font-bold text-white">{category.name}</h3>
+                      <h3 className="text-2xl font-bold text-white">{category.name || 'Unnamed Category'}</h3>
                     </div>
                   </motion.div>
                 ))}
@@ -300,4 +299,3 @@ export default function Home() {
     </div>
   )
 }
-

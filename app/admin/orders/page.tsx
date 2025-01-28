@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Pagination } from '@/app/components/ui/pagination'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
+import { BouncingDotsLoader } from '@/app/components/ui/Loaders'
 
 
 interface CartItem {
@@ -73,7 +74,7 @@ export default function AdminOrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<number | null>(null)
   const [searchOrderId, setSearchOrderId] = useState<string>('')
-
+  const[isLoading,setIsLoading] = useState(false);
   const ordersPerPage = 10
   const indexOfLastOrder = currentPage * ordersPerPage
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
@@ -89,6 +90,7 @@ export default function AdminOrdersPage() {
   }, [filterStatus])
 
   const fetchOrders = async () => {
+    setIsLoading(true);
     try {
       const url = filterStatus !== null
         ? `${API_BASE_URL}/Order?status=${filterStatus}`
@@ -105,6 +107,7 @@ export default function AdminOrdersPage() {
       console.error('Error fetching orders:', error)
       toast.error('An error occurred while fetching orders')
     }
+    setIsLoading(false);
   }
 
   const handleStatusChange = async (orderId: string, newStatus: number) => {
@@ -155,7 +158,13 @@ export default function AdminOrdersPage() {
       toast.error('An error occurred while searching for the order')
     }
   }
-
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+      <BouncingDotsLoader color="primary" />
+    </div>
+    )
+  }
   return (
     <div className="container mx-auto p-4 bg-white rounded-md">
 

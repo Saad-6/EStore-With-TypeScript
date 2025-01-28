@@ -13,6 +13,7 @@ import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { useRouter } from 'next/navigation'
 import { ConfirmationAlert } from '@/app/components/ui/confirmation-alert'
+import { BouncingDotsLoader } from '@/app/components/ui/Loaders'
 
 
 
@@ -164,7 +165,13 @@ export default function AdminMenu() {
     })
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+      <BouncingDotsLoader color="primary" />
+    </div>
+    )
+  }
   if (error) return <div>Error: {error}</div>
   if (!selectedLayout) return <div>No layouts available</div>
 

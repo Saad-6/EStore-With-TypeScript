@@ -342,7 +342,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
             <input
               type="text"
               name="url"
-              value={formData.primaryImage.url}
+              value={formData.primaryImage?.url || ''}
               onChange={(e) => handleImageChange(e, -1)}
               placeholder="Image URL"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -351,7 +351,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSubmit, categories
             <input
               type="text"
               name="altText"
-              value={formData.primaryImage.altText}
+              value={formData.primaryImage?.altText}
               onChange={(e) => handleImageChange(e, -1)}
               placeholder="Alt Text"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"

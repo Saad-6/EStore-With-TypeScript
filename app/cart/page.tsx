@@ -53,7 +53,7 @@ export default function CartPage() {
                 <Image src={item.image} alt={item.name} width={100} height={100} className="rounded-md" />
                 <div className="flex-grow">
                   <h2 className="text-lg font-semibold">{item.name}</h2>
-                  <p className="text-gray-600">${item.price.toFixed(2)}</p>
+                  <p className="text-green-500 font-light">${item.price.toFixed(2)}</p>
                   {Object.entries(item.selectedVariants).map(([variantName, option]) => (
                     <p key={variantName} className="text-sm text-gray-500">
                       {variantName}: {option.value}

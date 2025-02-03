@@ -1,7 +1,8 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -12,11 +13,33 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import toast from "react-hot-toast"
 import { Input } from "@/app/components/ui/input"
-import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 
 const API_BASE_URL = "https://localhost:7007/api"
+
+interface ImageType {
+  id?: number
+  url: string
+  altText?: string
+  file?: File
+}
+
+interface VariantOptionType {
+  id?: number
+  value: string
+  optionImages: ImageType[]
+  priceAdjustment: number
+  stock: number
+  sku: string
+}
+
+interface VariantType {
+  id?: number
+  name: string
+  displayType: "dropdown" | "checkbox"
+  options: VariantOptionType[]
+}
 
 const seoSchema = z.object({
   metaTitle: z.string().optional(),
@@ -26,20 +49,32 @@ const seoSchema = z.object({
 })
 
 const variantOptionSchema = z.object({
+  id: z.number().optional(),
   value: z.string().min(1, "Option value is required"),
   sku: z.string().optional(),
   stock: z.number().min(0, "Stock must be a positive number").optional(),
   priceAdjustment: z.number().optional(),
-  images: z.array(z.instanceof(File)).optional(),
+  optionImages: z
+    .array(
+      z.object({
+        id: z.number().optional(),
+        url: z.string(),
+        altText: z.string().optional(),
+        file: z.any().optional(),
+      }),
+    )
+    .optional(),
 })
 
 const variantSchema = z.object({
+  id: z.number().optional(),
   name: z.string().min(1, "Variant name is required"),
   displayType: z.enum(["dropdown", "checkbox"]),
   options: z.array(variantOptionSchema).min(1, "At least one option is required"),
 })
 
 const productSchema = z.object({
+  id: z.number().optional(),
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
   sku: z.string().min(1, "SKU is required"),
@@ -55,18 +90,24 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>
 
-export default function CreateProductPage() {
+export default function CreateEditProductPage() {
   const router = useRouter()
-  const [primaryImage, setPrimaryImage] = useState<File | null>(null)
-  const [additionalImages, setAdditionalImages] = useState<File[]>([])
+  const searchParams = useSearchParams()
+  const productId = searchParams.get("id")
+  const isEditing = !!productId
+
+  const [primaryImage, setPrimaryImage] = useState<ImageType | null>(null)
+  const [additionalImages, setAdditionalImages] = useState<ImageType[]>([])
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
-  const [variantOptionImages, setVariantOptionImages] = useState<{ [key: string]: File[] }>({})
+  const [variantOptionImages, setVariantOptionImages] = useState<{ [key: string]: ImageType[] }>({})
+
   const {
     register,
     control,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -77,7 +118,7 @@ export default function CreateProductPage() {
         {
           name: "",
           displayType: "dropdown",
-          options: [{ value: "", sku: "", stock: 0, priceAdjustment: 0, images: [] }],
+          options: [{ value: "", sku: "", stock: 0, priceAdjustment: 0, optionImages: [] }],
         },
       ],
     },
@@ -94,32 +135,114 @@ export default function CreateProductPage() {
 
   const watchName = watch("name")
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/Category`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch categories",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error)
+      toast({
+        title: "Error",
+        description: "An error occurred while fetching categories",
+        variant: "destructive",
+      })
+    }
+  }, [])
+
+  const fetchProduct = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/Product/id/${productId}`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      if (response.ok) {
+        const product = await response.json()
+        reset(product)
+        if (product.categoryId) {
+          setValue("categoryId", product.categoryId)
+        }
+        if (product.primaryImage) {
+          setPrimaryImage({
+            id: product.primaryImage.id,
+            url: product.primaryImage.url,
+            altText: product.primaryImage.altText,
+          })
+        }
+        if (product.images) {
+          console.log("Product:",product);
+          console.log("Product Images:",product.images)
+          setAdditionalImages(
+            product.images.map((img: any) => ({
+              id: img.id,
+              url: img.url,
+              altText: img.altText,
+            })),
+          )
+        }
+        if (product.variants) {
+          const newVariantOptionImages: { [key: string]: ImageType[] } = {}
+
+          product.variants.forEach((variant: VariantType, variantIndex: number) => {
+            variant.options.forEach((option: VariantOptionType, optionIndex: number) => {
+              if (option.optionImages && option.optionImages.length > 0) {
+                const key = `${variantIndex}-${optionIndex}`
+                newVariantOptionImages[key] = option.optionImages.map((img: any) => ({
+                  id: img.id,
+                  url: img.url,
+                  altText: img.altText,
+                }))
+              }
+            })
+          })
+
+          setVariantOptionImages(newVariantOptionImages)
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to fetch product",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error)
+      toast({
+        title: "Error",
+        description: "An error occurred while fetching the product",
+        variant: "destructive",
+      })
+    }
+  }, [productId, reset, setValue])
+
   useEffect(() => {
     fetchCategories()
-  }, [])
+    if (isEditing) {
+      fetchProduct()
+    }
+  }, [isEditing, fetchCategories, fetchProduct])
 
   useEffect(() => {
     if (watchName) {
       setValue("slug", generateSlug(watchName))
       setValue("seo.metaTitle", `${watchName} - Buy ${watchName} Online`)
-      setValue("seo.metaDescription", `Purchase ${watchName}. ${watch("description") || ""}`)
     }
-  }, [watchName, setValue, watch])
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/Category`)
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data)
-      } else {
-        toast.error("Failed to fetch categories")
-      }
-    } catch (error) {
-      console.error("Error fetching categories:", error)
-      toast.error("An error occurred while fetching categories")
-    }
-  }
+  }, [watchName, setValue])
 
   const generateSlug = (name: string) => {
     return name
@@ -128,86 +251,205 @@ export default function CreateProductPage() {
       .replace(/[^\w-]+/g, "")
   }
 
+  const validateForm = (data: ProductFormValues): string[] => {
+    const errors: string[] = []
+
+    if (!data.name) errors.push("Product name is required")
+    if (!data.description) errors.push("Product description is required")
+    if (!data.sku) errors.push("SKU is required")
+    if (data.price <= 0) errors.push("Price must be greater than 0")
+    if (data.stock < 0) errors.push("Stock cannot be negative")
+    if (!data.slug) errors.push("Slug is required")
+    if (!data.categoryId) errors.push("Category is required")
+
+    if (data.variants) {
+      data.variants.forEach((variant, index) => {
+        if (!variant.name) errors.push(`Variant ${index + 1} name is required`)
+        if (!variant.options || variant.options.length === 0) {
+          errors.push(`Variant ${index + 1} must have at least one option`)
+        } else {
+          variant.options.forEach((option, optionIndex) => {
+            if (!option.value) errors.push(`Option ${optionIndex + 1} of Variant ${index + 1} must have a value`)
+          })
+        }
+      })
+    }
+
+    return errors
+  }
+
   const onSubmit = async (data: ProductFormValues) => {
+    const validationErrors = validateForm(data)
+    if (validationErrors.length > 0) {
+      validationErrors.forEach((error) =>
+        toast({ title: "Validation Error", description: error, variant: "destructive" }),
+      )
+      return
+    }
+
     try {
       const formData = new FormData()
 
-      // Append product data
-      Object.entries(data).forEach(([key, value]) => {
+      // Append basic product data
+      Object.keys(data).forEach((key) => {
         if (key !== "seo" && key !== "variants") {
-          formData.append(key, value.toString())
+          formData.append(key, data[key as keyof ProductFormValues]?.toString() ?? "")
         }
       })
 
       // Append SEO data
-      Object.entries(data.seo).forEach(([key, value]) => {
-        if (value) formData.append(`seo.${key}`, value)
-      })
-
-      // Append variants data
-      data.variants?.forEach((variant, index) => {
-        formData.append(`Variants[${index}].Name`, variant.name)
-        formData.append(`Variants[${index}].DisplayType`, variant.displayType)
-        variant.options.forEach((option, optionIndex) => {
-          formData.append(`Variants[${index}].Options[${optionIndex}].Value`, option.value)
-          if (option.sku) formData.append(`Variants[${index}].Options[${optionIndex}].SKU`, option.sku)
-          if (option.stock !== undefined)
-            formData.append(`Variants[${index}].Options[${optionIndex}].Stock`, option.stock.toString())
-          if (option.priceAdjustment !== undefined)
-            formData.append(
-              `Variants[${index}].Options[${optionIndex}].PriceAdjustment`,
-              option.priceAdjustment.toString(),
-            )
-          const key = `${index}-${optionIndex}`
-          if (variantOptionImages[key]) {
-            variantOptionImages[key].forEach((image, imageIndex) => {
-              formData.append(`Variants[${index}].Options[${optionIndex}].OptionImages`, image)
-            })
-          }
+      if (data.seo) {
+        Object.keys(data.seo).forEach((key) => {
+          formData.append(`SEO.${key}`, data.seo[key as keyof typeof data.seo] ?? "")
         })
-      })
-
-      // Append image files
-      if (primaryImage) {
-        formData.append("PrimaryImageFile", primaryImage)
       }
-      additionalImages.forEach((file) => {
-        formData.append("AdditionalImageFiles", file)
-      })
 
-      const response = await fetch(`${API_BASE_URL}/Product?operation=add`, {
+      // Handle primary image
+      if (primaryImage?.file) {
+        formData.append("PrimaryImageFile", primaryImage.file)
+      } else if (primaryImage?.url) {
+        formData.append("PrimaryImage.Url", primaryImage.url)
+        formData.append("PrimaryImage.AltText", primaryImage.altText || "")
+      }
+
+      // Handle additional images
+      const newAdditionalImages = additionalImages.filter((img) => img.file)
+      const existingAdditionalImages = additionalImages.filter((img) => !img.file && img.url)
+
+      newAdditionalImages.forEach((img) => {
+        formData.append("AdditionalImages.Files", img.file as File)
+      })
+      formData.append(
+        "AdditionalImages.AlreadyPresentUrls",
+        JSON.stringify(existingAdditionalImages.map((img) => img.url)),
+      )
+
+      // Handle variants
+      if (data.variants && data.variants.length > 0) {
+        data.variants.forEach((variant, variantIndex) => {
+          formData.append(`Variants.NewVariants[${variantIndex}].Id`, variant.id?.toString() || "0")
+          formData.append(`Variants.NewVariants[${variantIndex}].Name`, variant.name)
+          formData.append(`Variants.NewVariants[${variantIndex}].DisplayType`, variant.displayType)
+
+          variant.options.forEach((option, optionIndex) => {
+            formData.append(
+              `Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].Id`,
+              option.id?.toString() || "0",
+            )
+            formData.append(`Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].Value`, option.value)
+            formData.append(`Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].SKU`, option.sku || "")
+            formData.append(
+              `Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].Stock`,
+              option.stock?.toString() || "0",
+            )
+            formData.append(
+              `Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].PriceAdjustment`,
+              option.priceAdjustment?.toString() || "0",
+            )
+
+            // Handle option images
+            const optionImages = variantOptionImages[`${variantIndex}-${optionIndex}`] || []
+            const newImages = optionImages.filter((img) => img.file)
+            const existingImages = optionImages.filter((img) => img.id)
+
+            newImages.forEach((image, imageIndex) => {
+              formData.append(
+                `Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].NewOptionImages`,
+                image.file,
+              )
+            })
+
+            formData.append(
+              `Variants.NewVariants[${variantIndex}].NewOptions[${optionIndex}].ExistingOptionImageIds`,
+              JSON.stringify(existingImages.map((img) => img.id)),
+            )
+          })
+
+          // Handle existing option IDs
+          const existingOptionIds = variant.options.filter((option) => option.id).map((option) => option.id)
+          formData.append(`Variants.NewVariants[${variantIndex}].ExistingOptionId`, JSON.stringify(existingOptionIds))
+        })
+
+        // Append existing variant IDs
+        const existingVariantIds = data.variants.filter((variant) => variant.id).map((variant) => variant.id)
+        formData.append("Variants.ExistingVariantIds", JSON.stringify(existingVariantIds))
+      } else {
+        formData.append("Variants.NewVariants", JSON.stringify([]))
+        formData.append("Variants.ExistingVariantIds", JSON.stringify([]))
+      }
+
+      // Log FormData for debugging
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`)
+      }
+
+      const operation = isEditing ? "update" : "add"
+      const response = await fetch(`${API_BASE_URL}/Product?operation=${operation}`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       })
 
       if (response.ok) {
-        toast.success("Product added successfully")
-        // Use setTimeout to ensure the toast is shown before redirecting
+        toast({
+          title: "Success",
+          description: `Product ${isEditing ? "updated" : "added"} successfully`,
+          variant: "default",
+        })
         setTimeout(() => {
           router.push("/admin/products")
         }, 1000)
       } else {
-        const errorText = await response.text()
-        console.error("Failed to add product:", errorText)
-        toast.error(`Failed to add product. Server response: ${errorText}`)
+        const errorData = await response.json()
+        console.error(`Failed to ${isEditing ? "update" : "add"} product:`, errorData)
+
+        if (errorData.errors) {
+          Object.keys(errorData.errors).forEach((key) => {
+            const errorMessage = errorData.errors[key].join(", ")
+            toast({
+              title: "Error",
+              description: `${key}: ${errorMessage}`,
+              variant: "destructive",
+            })
+          })
+        } else {
+          toast({
+            title: "Error",
+            description: `Failed to ${isEditing ? "update" : "add"} product. ${errorData.title || "Unknown error occurred"}`,
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
-      console.error("Error adding product:", error)
-      toast.error(`An error occurred while adding the product: ${error}`)
+      console.error(`Error ${isEditing ? "updating" : "adding"} product:`, error)
+      toast({
+        title: "Error",
+        description: `An error occurred while ${isEditing ? "updating" : "adding"} the product: ${error}`,
+        variant: "destructive",
+      })
     }
   }
 
   const handlePrimaryImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      setPrimaryImage(file)
+      setPrimaryImage({
+        url: URL.createObjectURL(file),
+        file: file,
+        altText: file.name,
+      })
     }
   }
 
   const handleAdditionalImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (files) {
-      setAdditionalImages((prev) => [...prev, ...Array.from(files)])
+      const newImages = Array.from(files).map((file) => ({
+        url: URL.createObjectURL(file),
+        file: file,
+        altText: file.name,
+      }))
+      setAdditionalImages((prev) => [...prev, ...newImages])
     }
   }
 
@@ -218,11 +460,34 @@ export default function CreateProductPage() {
   ) => {
     const files = event.target.files
     if (files) {
-      const newFiles = Array.from(files)
+      const newFiles = Array.from(files).map((file) => ({
+        url: URL.createObjectURL(file),
+        file: file,
+        altText: file.name,
+      }))
       const key = `${variantIndex}-${optionIndex}`
       setVariantOptionImages((prev) => ({
         ...prev,
         [key]: [...(prev[key] || []), ...newFiles],
+      }))
+    }
+  }
+
+  const removeImage = (
+    index: number,
+    type: "additional" | "primary" | "variant",
+    variantIndex?: number,
+    optionIndex?: number,
+  ) => {
+    if (type === "additional") {
+      setAdditionalImages((prev) => prev.filter((_, i) => i !== index))
+    } else if (type === "primary") {
+      setPrimaryImage(null)
+    } else if (type === "variant" && variantIndex !== undefined && optionIndex !== undefined) {
+      const key = `${variantIndex}-${optionIndex}`
+      setVariantOptionImages((prev) => ({
+        ...prev,
+        [key]: prev[key].filter((_, i) => i !== index),
       }))
     }
   }
@@ -232,18 +497,19 @@ export default function CreateProductPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold flex items-center">
           <PlusCircle className="mr-2 h-8 w-8" />
-          Create Product
+          {isEditing ? "Edit" : "Create"} Product
         </h1>
         <Button
           type="submit"
           form="product-form"
           className="px-6 py-3 text-lg font-semibold rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 transition-all duration-200 ease-in-out"
         >
-          Save Product
+          {isEditing ? "Update" : "Save"} Product
         </Button>
       </div>
 
       <form id="product-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-wrap -mx-4">
+        {isEditing && <input type="hidden" {...register("id", { valueAsNumber: true })} />}
         <div className="w-full lg:w-2/3 px-4">
           <Card className="mb-8">
             <CardContent className="p-6">
@@ -318,7 +584,10 @@ export default function CreateProductPage() {
                   <Label htmlFor="categoryId" className="text-sm font-semibold mb-1 block">
                     Category
                   </Label>
-                  <Select onValueChange={(value) => setValue("categoryId", Number.parseInt(value))}>
+                  <Select
+                    onValueChange={(value) => setValue("categoryId", Number.parseInt(value))}
+                    defaultValue={watch("categoryId")?.toString()}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
@@ -394,11 +663,24 @@ export default function CreateProductPage() {
                   className="block text-center p-12 border-2 border-dashed rounded-lg cursor-pointer"
                 >
                   {primaryImage ? (
-                    <img
-                      src={URL.createObjectURL(primaryImage) || "/placeholder.svg"}
-                      alt="Primary"
-                      className="max-w-full h-auto"
-                    />
+                    <div className="relative">
+                      <Image
+                        src={primaryImage.url || "/placeholder.svg"}
+                        alt="Primary"
+                        width={200}
+                        height={200}
+                        className="max-w-full h-auto mx-auto"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-0 right-0"
+                        onClick={() => removeImage(0, "primary")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ) : (
                     <div className="text-center">
                       <Upload className="mx-auto h-12 w-12 text-gray-400" />
@@ -415,32 +697,39 @@ export default function CreateProductPage() {
                 </Label>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((index) => (
-                  <Label
-                    key={index}
-                    htmlFor={`additionalImage${index}`}
-                    className="block p-4 border-2 border-dashed rounded-lg cursor-pointer"
-                  >
-                    {additionalImages[index - 1] ? (
-                      <img
-                        src={URL.createObjectURL(additionalImages[index - 1]) || "/placeholder.svg"}
-                        alt={`Additional ${index}`}
-                        className="max-w-full h-auto"
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <Plus className="mx-auto h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-                    <Input
-                      id={`additionalImage${index}`}
-                      type="file"
-                      className="hidden"
-                      onChange={handleAdditionalImageUpload}
-                      accept="image/*"
+                {additionalImages.map((image, index) => (
+                  <div key={index} className="relative">
+                    <Image
+                      src={image.url || "/placeholder.svg"}
+                      alt={`Additional ${index + 1}`}
+                      width={100}
+                      height={100}
+                      className="max-w-full h-auto mx-auto"
                     />
-                  </Label>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-0 right-0"
+                      onClick={() => removeImage(index, "additional")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
+                <Label htmlFor="additionalImage" className="block p-4 border-2 border-dashed rounded-lg cursor-pointer">
+                  <div className="text-center">
+                    <Plus className="mx-auto h-8 w-8 text-gray-400" />
+                  </div>
+                  <Input
+                    id="additionalImage"
+                    type="file"
+                    className="hidden"
+                    onChange={handleAdditionalImageUpload}
+                    accept="image/*"
+                    multiple
+                  />
+                </Label>
               </div>
             </CardContent>
           </Card>
@@ -604,9 +893,11 @@ export default function CreateProductPage() {
                               </Label>
                               {variantOptionImages[`${variantIndex}-${optionIndex}`]?.map((image, imageIndex) => (
                                 <div key={imageIndex} className="relative aspect-square">
-                                  <img
-                                    src={URL.createObjectURL(image) || "/placeholder.svg"}
+                                  <Image
+                                    src={image.url || "/placeholder.svg"}
                                     alt={`Option ${optionIndex} image ${imageIndex}`}
+                                    width={100}
+                                    height={100}
                                     className="w-full h-full object-cover rounded-lg"
                                   />
                                   <Button
@@ -614,14 +905,7 @@ export default function CreateProductPage() {
                                     variant="destructive"
                                     size="icon"
                                     className="absolute top-1 right-1 h-6 w-6"
-                                    onClick={() => {
-                                      const newImages = [...variantOptionImages[`${variantIndex}-${optionIndex}`]]
-                                      newImages.splice(imageIndex, 1)
-                                      setVariantOptionImages((prev) => ({
-                                        ...prev,
-                                        [`${variantIndex}-${optionIndex}`]: newImages,
-                                      }))
-                                    }}
+                                    onClick={() => removeImage(imageIndex, "variant", variantIndex, optionIndex)}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
@@ -651,7 +935,7 @@ export default function CreateProductPage() {
                         onClick={() =>
                           field.onChange([
                             ...field.value,
-                            { value: "", sku: "", stock: 0, priceAdjustment: 0, images: [] },
+                            { value: "", sku: "", stock: 0, priceAdjustment: 0, optionImages: [] },
                           ])
                         }
                       >
@@ -670,7 +954,7 @@ export default function CreateProductPage() {
               appendVariant({
                 name: "",
                 displayType: "dropdown",
-                options: [{ value: "", sku: "", stock: 0, priceAdjustment: 0, images: [] }],
+                options: [{ value: "", sku: "", stock: 0, priceAdjustment: 0, optionImages: [] }],
               })
             }
           >

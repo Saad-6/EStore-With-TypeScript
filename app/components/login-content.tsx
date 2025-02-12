@@ -11,6 +11,8 @@ import { useAuth } from '../lib/auth'
 import toast, { Toaster } from 'react-hot-toast'
 import { BouncingDotsLoader, SpinningCircleLoader } from './ui/Loaders'
 
+const API_BASE_URL = "https://localhost:7007/api"
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,7 +50,7 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true);
     try {
-      const response = await fetch('https://localhost:7007/api/Auth/Login', {
+      const response = await fetch(`${API_BASE_URL}/Auth/Login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

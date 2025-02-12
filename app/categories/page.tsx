@@ -9,6 +9,9 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Input } from '../components/ui/input'
 
+
+  const API_BASE_URL = 'https://localhost:7007/api'
+
 interface Category {
   id: string
   name: string
@@ -29,8 +32,6 @@ export default function CategoriesPage() {
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     category.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
-
-  const API_BASE_URL = 'https://localhost:7007/api'
 
   const fetchCategories = async () => {
     try {

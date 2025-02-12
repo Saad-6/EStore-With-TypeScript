@@ -12,6 +12,10 @@ import { TrendingUpIcon } from 'lucide-react'
 import AnimatedText from './components/ui/AnimatedText'
 import { HomePageLayout, HeroCarouselSlide, SimpleProductDTO, SimpleCategoryDTO } from '@/interfaces/product-interfaces'
 
+
+  const API_BASE_URL = 'https://localhost:7007/api'
+
+
 const AnimatedSection = ({ children }: { children: React.ReactNode }) => {
   const controls = useAnimation()
   const [ref, inView] = useInView({
@@ -84,12 +88,12 @@ export default function Home() {
   useEffect(() => {
     const fetchLayout = async () => {
       try {
-        const response = await fetch('https://localhost:7007/api/Layout/active')
+        const response = await fetch(`${API_BASE_URL}/Layout/active`)
         if (!response.ok) {
           throw new Error('Failed to fetch layout')
         }
         const data: HomePageLayout = await response.json();
-        console.log(data);
+     
         setLayout(data)
       } catch (err) {
         console.error('Error fetching layout:', err)

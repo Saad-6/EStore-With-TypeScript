@@ -6,11 +6,13 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Category, Product } from '@/interfaces/product-interfaces'
 import toast from 'react-hot-toast'
-
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '../components/ui/input'
 import ModernProductCard from '../components/modern-product-card'
+
+
+const API_BASE_URL = 'https://localhost:7007/api'
 
 interface ProductsPageProps {
   initialName?: string
@@ -30,12 +32,12 @@ export default function ProductsPage({ initialName, initialDescription }: Produc
 
   const getProducts = useCallback(async () => {
     try {
-      const res = await fetch('https://localhost:7007/api/Product/')
+      const res = await fetch(`${API_BASE_URL}/Product/`)
       if (res.ok) {
         const fetchedProducts: Product[] = await res.json()
         setProducts(fetchedProducts)
-        console.log("Fetched products:", fetchedProducts.length)
-        console.log("Sample product:", fetchedProducts[0])  // Log a sample product
+
+
       } else {
         const errorText = await res.text()
         console.error("Failed to fetch products:", errorText)
@@ -51,11 +53,10 @@ export default function ProductsPage({ initialName, initialDescription }: Produc
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('https://localhost:7007/api/Category')
+      const response = await fetch(`${API_BASE_URL}/Category`)
       if (response.ok) {
         const data: Category[] = await response.json()
         setCategories(data)
-        console.log("Fetched categories:", data.length)
       } else {
         toast.error('Failed to fetch categories')
       }
@@ -75,27 +76,24 @@ export default function ProductsPage({ initialName, initialDescription }: Produc
     if (categoryFromUrl) {
       const decodedCategory = decodeURIComponent(categoryFromUrl)
       setSelectedCategory(decodedCategory)
-      console.log("Decoded Category name from url:", decodedCategory)
+
     } else {
       setSelectedCategory('All')
     }
   }, [searchParams])
 
   const filterProducts = useCallback(() => {
-    console.log("Filtering products:", products.length)
-    console.log("Selected category:", selectedCategory)
-    console.log("Price range:", priceFrom, "-", priceTo)
     const filtered = products.filter(product => {
       const categoryMatch = selectedCategory === 'All' || product.category.name.toLowerCase() === selectedCategory.toLowerCase()
       const priceMatch = product.price >= priceFrom && product.price <= priceTo
       const nameMatch = !initialName || product.name.toLowerCase().includes(initialName.toLowerCase())
       const descriptionMatch = !initialDescription || product.description.toLowerCase().includes(initialDescription.toLowerCase())
       
-      console.log(`Product ${product.name}: Category Match: ${categoryMatch}, Price Match: ${priceMatch}, Name Match: ${nameMatch}, Description Match: ${descriptionMatch}`)
+
       
       return categoryMatch && priceMatch && nameMatch && descriptionMatch
     })
-    console.log("Filtered products:", filtered.length)
+
     setFilteredProducts(filtered)
   }, [products, selectedCategory, priceFrom, priceTo, initialName, initialDescription])
 

@@ -3,11 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
-
 import { Button } from "@/components/ui/button"
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
 import {
   Select,
   SelectContent,
@@ -16,6 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/app/lib/auth'
+
+
+const API_BASE_URL = "https://localhost:7007/api"
+
 
 interface LogEntity {
   id: number
@@ -47,12 +49,28 @@ export default function AdminLogsPage() {
   const [logs, setLogs] = useState<LogEntity[]>([])
   const [loading, setLoading] = useState(true)
   const [theme, setTheme] = useState<Theme>('light')
+  const {getToken} = useAuth();
   const { toast } = useToast()
 
   const fetchLogs = useCallback(async () => {
     try {
+
+      const token = getToken();
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch logs. Authentication token not found.",
+          variant: "destructive",
+        })
+        return
+      }
+
       setLoading(true)
-      const response = await fetch('https://localhost:7007/api/Log')
+      const response = await fetch(`${API_BASE_URL}/Log`,{
+        headers:{
+          Authorization: `Bearer ${token}`,
+        }
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch logs')
       }
@@ -79,8 +97,22 @@ export default function AdminLogsPage() {
 
   const handleClearLogs = async () => {
     try {
-      const response = await fetch('https://localhost:7007/api/Log', {
+
+      const token = getToken();
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch logs. Authentication token not found.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/Log`, {
         method: 'DELETE',
+        headers:{
+          Authorization: `Bearer ${token}`,
+        }
       })
       if (!response.ok) {
         throw new Error('Failed to clear logs')

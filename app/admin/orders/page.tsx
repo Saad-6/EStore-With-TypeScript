@@ -10,7 +10,11 @@ import { Pagination } from '@/app/components/ui/pagination'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { BouncingDotsLoader } from '@/app/components/ui/Loaders'
+import { headers } from 'next/headers'
+import { useAuth } from '@/app/lib/auth'
 
+
+const API_BASE_URL = 'https://localhost:7007/api'
 
 interface CartItem {
   product: {
@@ -48,7 +52,7 @@ interface Order {
   status: number
 }
 
-const API_BASE_URL = 'https://localhost:7007/api'
+
 
 const statusColors = {
   0: 'bg-yellow-200 text-yellow-800', // Pending
@@ -82,7 +86,7 @@ export default function AdminOrdersPage() {
     ? orders.filter(order => order.status === filterStatus)
     : orders
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder)
-
+  const{getToken} = useAuth();
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
 
   useEffect(() => {
@@ -92,10 +96,22 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
       const url = filterStatus !== null
         ? `${API_BASE_URL}/Order?status=${filterStatus}`
         : `${API_BASE_URL}/Order`
-      const response = await fetch(url)
+      const response = await fetch(
+        url
+        ,{
+          headers:{
+            Authorization: `Bearer ${token}`,
+          }
+        
+      })
       if (response.ok) {
         const data = await response.json()
         setOrders(data)
@@ -112,10 +128,16 @@ export default function AdminOrdersPage() {
 
   const handleStatusChange = async (orderId: string, newStatus: number) => {
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
       const response = await fetch(`${API_BASE_URL}/Order/${orderId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus }),
       })

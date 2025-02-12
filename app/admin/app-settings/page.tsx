@@ -8,6 +8,10 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
 import { Input } from '@/app/components/ui/input'
+import { useAuth } from '@/app/lib/auth'
+
+
+  const API_BASE_URL = 'https://localhost:7007/api'
 
 interface SiteSettings {
   url: string
@@ -18,13 +22,14 @@ export default function SiteSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({ url: '', id: 0 })
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const {getToken} = useAuth();
   const router = useRouter()
 
   useEffect(() => {
     const fetchSettings = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch('https://localhost:7007/api/SiteSettings')
+        const response = await fetch(`${API_BASE_URL}/SiteSettings`)
         if (!response.ok) {
           throw new Error('Failed to fetch site settings')
         }
@@ -50,10 +55,17 @@ export default function SiteSettingsPage() {
     setIsSaving(true)
 
     try {
-      const response = await fetch('https://localhost:7007/api/SiteSettings', {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
+
+      const response = await fetch(`${API_BASE_URL}/SiteSettings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(settings),
       })

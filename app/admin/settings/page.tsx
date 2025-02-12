@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/ta
 import { useRouter } from 'next/navigation'
 import { ConfirmationAlert } from '@/app/components/ui/confirmation-alert'
 import { BouncingDotsLoader } from '@/app/components/ui/Loaders'
+import { useAuth } from '@/app/lib/auth'
 
 
 
@@ -25,6 +26,7 @@ export default function AdminMenu() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAlertOpen, setIsAlertOpen] = useState(false) // Added state for alert
+  const {getToken} = useAuth();
   const dataFetchedRef = useRef(false)
 
   const router = useRouter()
@@ -98,10 +100,16 @@ export default function AdminMenu() {
     if (!selectedLayout) return
 
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
       const response = await fetch(`https://localhost:7007/api/Layout/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(selectedLayout),
       })
@@ -118,8 +126,16 @@ export default function AdminMenu() {
 
   const handleActivateLayout = async (layoutId: number) => {
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
       const response = await fetch(`https://localhost:7007/api/Layout/${layoutId}/activate`, {
         method: 'PUT',
+        headers:{
+          Authorization: `Bearer ${token}`,
+        }
       })
 
       if (!response.ok) throw new Error('Failed to activate layout')
@@ -134,8 +150,16 @@ export default function AdminMenu() {
 
   const handleDeleteLayout = async (layoutId: number) => {
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
       const response = await fetch(`https://localhost:7007/api/Layout/${layoutId}`, {
         method: 'DELETE',
+        headers:{
+          Authorization: `Bearer ${token}`,
+        }
       })
 
       if (!response.ok) throw new Error('Failed to delete layout')

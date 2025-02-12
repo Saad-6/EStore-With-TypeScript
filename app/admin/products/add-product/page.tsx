@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/app/components/ui/input"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/app/lib/auth"
 
 const API_BASE_URL = "https://localhost:7007/api"
 
@@ -100,7 +101,7 @@ export default function CreateEditProductPage() {
   const [additionalImages, setAdditionalImages] = useState<ImageType[]>([])
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
   const [variantOptionImages, setVariantOptionImages] = useState<{ [key: string]: ImageType[] }>({})
-
+  const {getToken} = useAuth();
   const {
     register,
     control,
@@ -378,14 +379,22 @@ export default function CreateEditProductPage() {
         formData.append("Variants.ExistingVariantIds", JSON.stringify([]))
       }
 
-      // Log FormData for debugging
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`)
+      const token = getToken();
+      if (!token) {
+        toast({
+          title : "Error",
+          description : "User Authentication token not found",
+          variant:"destructive"
+        })
+        return;
       }
-
       const operation = isEditing ? "update" : "add"
+
       const response = await fetch(`${API_BASE_URL}/Product?operation=${operation}`, {
         method: "POST",
+        headers:{
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
         credentials: "include",
       })

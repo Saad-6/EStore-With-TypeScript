@@ -1,21 +1,21 @@
-import { XIcon } from 'lucide-react'
-import React from 'react'
-import { createPortal } from 'react-dom'
-import { Button } from './button'
-import { Input } from './input'
-import { Label } from './label'
+import { XIcon } from "lucide-react"
+import type React from "react"
+import { createPortal } from "react-dom"
+import { Button } from "./button"
+import { Input } from "./input"
+import { Label } from "./label"
 
-import { Product, VariantOption } from '@/interfaces/product-interfaces'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import type { Product, Variant } from "@/interfaces/product-interfaces"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
   product: Product
   quantity: number
-  selectedVariants: Record<string, VariantOption>
+  selectedVariants: Record<number, number>
   onQuantityChange: (quantity: number) => void
-  onVariantChange: (variantName: string, value: string) => void
+  onVariantChange: (variantId: number, optionId: number) => void
   onConfirm: () => void
 }
 
@@ -27,12 +27,12 @@ export function Modal({
   selectedVariants,
   onQuantityChange,
   onVariantChange,
-  onConfirm
+  onConfirm,
 }: ModalProps) {
   if (!isOpen) return null
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newQuantity = parseInt(e.target.value, 10)
+    const newQuantity = Number.parseInt(e.target.value, 10)
     if (!isNaN(newQuantity) && newQuantity > 0) {
       onQuantityChange(newQuantity)
     }
@@ -51,12 +51,12 @@ export function Modal({
           </button>
         </div>
         <div className="p-6">
-          <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Confirm Add to Cart - <span>{product.name}</span></h3>
+          <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+            Confirm Add to Cart - <span>{product.name}</span>
+          </h3>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="quantity" >
-                Quantity
-              </Label>
+              <Label htmlFor="quantity">Quantity</Label>
               <Input
                 type="number"
                 id="quantity"
@@ -67,33 +67,32 @@ export function Modal({
                 className="mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-white dark:text-black"
               />
             </div>
-            {product.variants && product.variants.map((variant) => (
-              <div key={variant.id}>
-                <Label htmlFor={`variant-${variant.id}`}>
-                  {variant.name}
-                </Label>
-                <Select
-                  value={selectedVariants[variant.name]?.value || ''}
-                  onValueChange={(value) => onVariantChange(variant.name, value)}
-                >
-                  <SelectTrigger className="w-full mt-1 dark:text-black">
-                    <SelectValue placeholder={`Select ${variant.name}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {variant.options.map((option) => (
-                      <SelectItem key={option.id} value={option.value}>
-                        {option.value}
-                        {option.priceAdjustment !== 0 && (
-                          <span className={`ml-2 ${option.priceAdjustment > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {option.priceAdjustment > 0 ? '+' : '-'}${Math.abs(option.priceAdjustment).toFixed(2)}
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+            {product.variants &&
+              product.variants.map((variant: Variant) => (
+                <div key={variant.id}>
+                  <Label htmlFor={`variant-${variant.id}`}>{variant.name}</Label>
+                  <Select
+                    value={selectedVariants[variant.id]?.toString() || ""}
+                    onValueChange={(value) => onVariantChange(variant.id, Number.parseInt(value, 10))}
+                  >
+                    <SelectTrigger className="w-full mt-1 dark:text-black">
+                      <SelectValue placeholder={`Select ${variant.name}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {variant.options.map((option) => (
+                        <SelectItem key={option.id} value={option.id.toString()}>
+                          {option.value}
+                          {option.priceAdjustment !== 0 && (
+                            <span className={`ml-2 ${option.priceAdjustment > 0 ? "text-green-600" : "text-red-600"}`}>
+                              {option.priceAdjustment > 0 ? "+" : "-"}${Math.abs(option.priceAdjustment).toFixed(2)}
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
           </div>
           <div className="mt-6 flex justify-end space-x-3">
             <Button variant="default" onClick={onClose}>
@@ -110,3 +109,4 @@ export function Modal({
 
   return createPortal(modalContent, document.body)
 }
+

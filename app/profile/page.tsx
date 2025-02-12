@@ -1,16 +1,18 @@
-'use client'
+"use client"
 
-import React, { useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ShoppingBagIcon, CreditCardIcon } from 'lucide-react'
+import { useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { ShoppingBagIcon, CreditCardIcon } from "lucide-react"
 
-import PastOrders from './past-orders'
 
-import { jwtDecode } from 'jwt-decode'
-import { useAuth } from '../lib/auth'
-import { Button } from '../components/ui/button'
+
+import { jwtDecode } from "jwt-decode"
+
+import { Button } from "@/components/ui/button"
+import { useAuth } from "../lib/auth"
+import PastOrders from "../components/past-components"
 
 interface Token {
   userId: string
@@ -26,20 +28,20 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login')
+      router.push("/login")
     }
   }, [isAuthenticated, router])
 
   const handleLogout = () => {
     logout()
-    router.push('/login')
+    router.push("/login")
   }
 
   if (!isAuthenticated) {
     return null // or a loading spinner
   }
 
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem("token")
   let decodedToken: Token | null = null
   if (token) {
     decodedToken = jwtDecode(token)
@@ -57,10 +59,10 @@ export default function ProfilePage() {
             className="bg-card rounded-lg shadow-lg p-6"
           >
             <div className="flex flex-col items-center">
-              <img 
-                src={`https://api.dicebear.com/6.x/initials/svg?seed=${decodedToken?.userName}`} 
-                alt={decodedToken?.userName} 
-                className="w-32 h-32 rounded-full mb-4" 
+              <img
+                src={`https://api.dicebear.com/6.x/initials/svg?seed=${decodedToken?.userName}`}
+                alt={decodedToken?.userName}
+                className="w-32 h-32 rounded-full mb-4"
               />
               <h2 className="text-2xl font-semibold mb-2">{decodedToken?.userName}</h2>
               <p className="text-muted-foreground mb-4">{decodedToken?.email}</p>
@@ -76,13 +78,8 @@ export default function ProfilePage() {
             className="bg-card rounded-lg shadow-lg p-6 mt-8"
           >
             <h3 className="text-xl font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">         
-              <li>
-                <Link href="/orders" className="flex items-center text-primary hover:underline">
-                  <ShoppingBagIcon className="w-5 h-5 mr-2" />
-                  Order History
-                </Link>
-              </li>
+            <ul className="space-y-2">
+         
               <li>
                 <Link href="/profile/payment" className="flex items-center text-primary hover:underline">
                   <CreditCardIcon className="w-5 h-5 mr-2" />
@@ -107,3 +104,4 @@ export default function ProfilePage() {
     </div>
   )
 }
+

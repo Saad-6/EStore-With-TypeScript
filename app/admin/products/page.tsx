@@ -9,6 +9,8 @@ import { BouncingDotsLoader } from "@/app/components/ui/Loaders"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/app/lib/auth"
+
 
 const API_BASE_URL = "https://localhost:7007/api"
 
@@ -19,8 +21,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void
 }
 
-
-  const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
+const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <div className="flex justify-center items-center space-x-2 mt-4">
       <Button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} variant="outline">
@@ -42,6 +43,7 @@ export default function AdminProductPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [deleteProductId, setDeleteProductId] = useState(0)
   const router = useRouter()
+  const  {getToken}  = useAuth()
 
   useEffect(() => {
     fetchCategories()
@@ -90,10 +92,17 @@ export default function AdminProductPage() {
 
   const handleConfirmDelete = async () => {
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
+      console.log(token);
       const response = await fetch(`${API_BASE_URL}/Product/${deleteProductId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       })
 

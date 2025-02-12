@@ -31,7 +31,13 @@ export interface VariantOption {
   stock : number;
   optionImages?: { url: string; altText: string }[];
 }
-
+export interface Review{
+  id: number
+  stars: number
+  givenBy: string
+  comment: string
+  postedAt: string
+}
 export interface Product {
   id: number;
   name: string;
@@ -48,6 +54,7 @@ export interface Product {
   primaryImage: ProductImage;
   images: ProductImage[];
   variants: Variant[];
+  reviews : Review[]
 }
 
 export interface FAQ{

@@ -13,7 +13,9 @@ import { X } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/app/lib/auth'
 
+const API_BASE_URL = 'https://localhost:7007/api'
 
 export default function CreateLayout() {
   const router = useRouter()
@@ -26,6 +28,7 @@ export default function CreateLayout() {
   const [allProducts, setAllProducts] = useState<SimpleProduct[]>([])
   const [allCategories, setAllCategories] = useState<SimpleCategory[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const {getToken} = useAuth();
 
   useEffect(() => {
     fetchProducts()
@@ -34,7 +37,7 @@ export default function CreateLayout() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('https://localhost:7007/api/Product/simple')
+      const response = await fetch(`${API_BASE_URL}/Product/simple`)
       if (response.ok) {
         const data: SimpleProduct[] = await response.json()
         setAllProducts(data)
@@ -57,7 +60,7 @@ export default function CreateLayout() {
   const fetchCategories = async () => {
     
     try {
-      const response = await fetch('https://localhost:7007/api/Category')
+      const response = await fetch(`${API_BASE_URL}/Category`)
       if (response.ok) {
         const data: Category[] = await response.json()
         const simpleCategories: SimpleCategory[] = convertToSimpleCategory(data);
@@ -87,10 +90,18 @@ export default function CreateLayout() {
     }
 
     try {
-      const response = await fetch('https://localhost:7007/api/Layout', {
+
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
+
+      const response = await fetch(`${API_BASE_URL}/Layout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newLayout),
       })

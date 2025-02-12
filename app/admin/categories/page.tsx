@@ -6,6 +6,10 @@ import { PlusIcon, Pencil, Trash2, ChevronLeft, ChevronRight, X, Upload } from "
 import toast, { Toaster } from "react-hot-toast"
 import { ConfirmationAlert } from "@/app/components/ui/confirmation-alert"
 import { BouncingDotsLoader } from "@/app/components/ui/Loaders"
+import { useAuth } from "@/app/lib/auth"
+
+const API_BASE_URL = "https://localhost:7007/api"
+
 
 interface Category {
   id: number
@@ -13,9 +17,6 @@ interface Category {
   description: string
   thumbNailUrl: string
 }
-
-const API_BASE_URL = "https://localhost:7007/api"
-
 // Custom Button Component
 interface ButtonProps {
   children: React.ReactNode
@@ -111,13 +112,13 @@ const AdminCategoriesPage: React.FC = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
   const categoriesPerPage = 10
   const indexOfLastCategory = currentPage * categoriesPerPage
   const indexOfFirstCategory = indexOfLastCategory - categoriesPerPage
   const currentCategories = categories.slice(indexOfFirstCategory, indexOfLastCategory)
   const [isLoading, setIsLoading] = useState(false)
   const totalPages = Math.ceil(categories.length / categoriesPerPage)
+  const{getToken} = useAuth();
 
   useEffect(() => {
     fetchCategories()
@@ -153,8 +154,16 @@ const AdminCategoriesPage: React.FC = () => {
     formData.append("thumbnail", selectedFile)
 
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
       const response = await fetch(`${API_BASE_URL}/Category`, {
         method: "POST",
+        headers:{
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       })
       if (response.ok) {
@@ -182,8 +191,17 @@ const AdminCategoriesPage: React.FC = () => {
     if (categoryToDelete === null) return
 
     try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Authentication token not found")
+        return
+      }
+
       const response = await fetch(`${API_BASE_URL}/Category/${categoryToDelete}`, {
         method: "DELETE",
+        headers:{
+          Authorization: `Bearer ${token}`,
+        }
       })
       if (response.ok) {
         setCategories(categories.filter((category) => category.id !== categoryToDelete))

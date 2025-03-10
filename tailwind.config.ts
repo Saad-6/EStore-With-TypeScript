@@ -6,6 +6,7 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -54,6 +55,11 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        "badge-pending": "#FFA500", // Orange
+        "badge-confirmed": "#4CAF50", // Green
+        "badge-shipped": "#2196F3", // Blue
+        "badge-delivered": "#9C27B0", // Purple
+        "badge-cancelled": "#F44336", // Red
       },
       borderRadius: {
         lg: "var(--radius)",

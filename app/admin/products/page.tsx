@@ -35,8 +35,16 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   )
 }
 
+interface SimpleProduct{
+  name : string
+  price : number
+  stock : number
+  id : number
+  categoryName : string
+}
+
 export default function AdminProductPage() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<SimpleProduct[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [isAlertOpen, setIsAlertOpen] = useState(false)
@@ -68,9 +76,9 @@ export default function AdminProductPage() {
   const getProducts = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/Product/`)
+      const response = await fetch(`${API_BASE_URL}/Product/simple`)
       if (response.ok) {
-        const products: Product[] = await response.json()
+        const products: SimpleProduct[] = await response.json()
         setProducts(products)
       } else {
         const errorText = await response.text()
@@ -180,7 +188,7 @@ export default function AdminProductPage() {
             {products.slice((currentPage - 1) * 10, currentPage * 10).map((product) => (
               <tr key={product.id}>
                 <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{product.category.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{product.categoryName}</td>
                 <td className="px-6 py-4 whitespace-nowrap">${product.price}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
                 <td className="px-6 py-4 whitespace-nowrap">

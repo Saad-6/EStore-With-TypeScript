@@ -5,10 +5,10 @@ import { motion } from "framer-motion"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ShoppingBag, ChevronRight } from "lucide-react"
 import { useAuth } from "../lib/auth"
+import { CustomBadge } from "./custom-badge"
 
 
 const API_BASE_URL = "https://localhost:7007/api"
@@ -41,23 +41,12 @@ interface Order {
     firstName: string
     lastName: string
     city: string
-    // Add other address fields as needed
   }
   cartItems: CartItem[]
   user: {
     id: string
     userName: string
-    // Add other user fields as needed
   }
-}
-
-const statusMap: { [key: number]: string } = {
-    0: "Pending",
-    1: "Confirmed",
-    2: "Shipped",
-    3: "Delivered",
-    4: "Cancelled",
-  5: "Cancelled",
 }
 
 export default function PastOrders() {
@@ -118,15 +107,15 @@ export default function PastOrders() {
   }
 
   if (error) {
-    return <div className="text-center text-red-500 p-4 bg-red-100 rounded-lg">{error}</div>
+    return <div className="text-center text-red-500 p-4 bg-red-100 dark:bg-red-900 rounded-lg">{error}</div>
   }
 
   if (orders.length === 0) {
     return (
-      <div className="text-center p-8 bg-gray-100 rounded-lg">
-        <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
-        <p className="mt-1 text-sm text-gray-500">You haven't placed any orders yet.</p>
+      <div className="text-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
+        <ShoppingBag className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No orders</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">You haven't placed any orders yet.</p>
         <div className="mt-6">
           <Button onClick={() => router.push("/products")}>Start Shopping</Button>
         </div>
@@ -138,13 +127,13 @@ export default function PastOrders() {
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="text-left border-b">
-            <th className="py-2 px-4">Order ID</th>
-            <th className="py-2 px-4">Date</th>
-            <th className="py-2 px-4">Total</th>
-            <th className="py-2 px-4">Status</th>
-            <th className="py-2 px-4">Items</th>
-            <th className="py-2 px-4">Actions</th>
+          <tr className="text-left border-b dark:border-gray-700">
+            <th className="py-2 px-4 text-gray-800 dark:text-gray-200">Order ID</th>
+            <th className="py-2 px-4 text-gray-800 dark:text-gray-200">Date</th>
+            <th className="py-2 px-4 text-gray-800 dark:text-gray-200">Total</th>
+            <th className="py-2 px-4 text-gray-800 dark:text-gray-200">Status</th>
+            <th className="py-2 px-4 text-gray-800 dark:text-gray-200">Items</th>
+            <th className="py-2 px-4 text-gray-800 dark:text-gray-200">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -154,26 +143,26 @@ export default function PastOrders() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="border-b hover:bg-gray-50 cursor-pointer"
+              className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
               onClick={() => handleOrderClick(order)}
             >
-              <td className="py-4 px-4">#{order.id}</td>
-              <td className="py-4 px-4">{format(new Date(order.created), "MMM d, yyyy")}</td>
-              <td className="py-4 px-4">${order.total.toFixed(2)}</td>
+              <td className="py-4 px-4 text-gray-800 dark:text-gray-200">#{order.id}</td>
+              <td className="py-4 px-4 text-gray-800 dark:text-gray-200">
+                {format(new Date(order.created), "MMM d, yyyy")}
+              </td>
+              <td className="py-4 px-4 text-gray-800 dark:text-gray-200">${order.total.toFixed(2)}</td>
               <td className="py-4 px-4">
-                <Badge variant={order.status === 4 ? "success" : "default"}>
-                  {statusMap[order.status] || "Unknown"}
-                </Badge>
+                <CustomBadge status={order.status} />
               </td>
               <td className="py-4 px-4">
                 {order.cartItems.map((item, i) => (
-                  <div key={i} className="text-sm">
+                  <div key={i} className="text-sm text-gray-600 dark:text-gray-400">
                     {item.product.name} x{item.quantity}
                   </div>
                 ))}
               </td>
               <td className="py-4 px-4">
-                <Button variant="ghost" size="sm" className="flex items-center">
+                <Button variant="ghost" size="sm" className="flex items-center text-gray-800 dark:text-gray-200">
                   View <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </td>

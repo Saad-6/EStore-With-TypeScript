@@ -1,22 +1,41 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { PackageIcon, TruckIcon, CheckCircleIcon } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { PackageIcon, TruckIcon, CheckCircleIcon, ChevronDownIcon } from "lucide-react"
 import { useParams } from "next/navigation"
 import confetti from "canvas-confetti"
+import type { Product, VariantOption } from "@/interfaces/product-interfaces"
+
+interface CartItems {
+  product: Product
+  quantity: number
+  subTotal: number
+  selectedVariantsDisplay?: Record<string, VariantOption>
+}
 
 interface OrderDetails {
   id: string
   total: number
-  status: string
+  status: number
   created: string
+  cartItems: CartItems[]
+}
+
+const statusMap: { [key: number]: { label: string; color: string } } = {
+  0: { label: "Pending", color: "bg-yellow-500 text-white" },
+  1: { label: "Confirmed", color: "bg-blue-500 text-white" },
+  2: { label: "Shipped", color: "bg-indigo-500 text-white" },
+  3: { label: "Delivered", color: "bg-green-500 text-white" },
+  4: { label: "Cancelled", color: "bg-red-500 text-white" },
+  5: { label: "Cancelled", color: "bg-red-500 text-white" },
 }
 
 export default function OrderConfirmationPage() {
   const params = useParams()
-  const orderId = params.orderId
+  const orderId = params.orderId as string
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
+  const [showDetails, setShowDetails] = useState(false)
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -26,7 +45,19 @@ export default function OrderConfirmationPage() {
           throw new Error("Failed to fetch order details")
         }
         const data = await response.json()
-        setOrderDetails(data)
+        if (Array.isArray(data)) {
+          if (data.length > 0) {
+            // Take the first element if you expect a single order
+            setOrderDetails(data[0]);
+          } else {
+            // Handle the case where the array is empty (e.g., no order found)
+            console.warn("No order found.");
+            setOrderDetails(null); // or some default value
+          }
+        } else {
+          // If it's not an array, assume it's a single object
+          setOrderDetails(data);
+        }
       } catch (error) {
         console.error("Error fetching order details:", error)
       }
@@ -34,7 +65,6 @@ export default function OrderConfirmationPage() {
 
     fetchOrderDetails()
 
-    // Trigger confetti effect
     confetti({
       particleCount: 100,
       spread: 70,
@@ -42,16 +72,17 @@ export default function OrderConfirmationPage() {
     })
   }, [orderId])
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: number) => {
     switch (status) {
-      case "Pending":
-        return <PackageIcon className="w-8 h-8 text-yellow-500" />
-      case "Shipped":
-        return <TruckIcon className="w-8 h-8 text-blue-500" />
-      case "Delivered":
-        return <CheckCircleIcon className="w-8 h-8 text-green-500" />
+      case 0:
+      case 1:
+        return <PackageIcon className="w-6 h-6 text-yellow-500" />
+      case 2:
+        return <TruckIcon className="w-6 h-6 text-blue-500" />
+      case 3:
+        return <CheckCircleIcon className="w-6 h-6 text-green-500" />
       default:
-        return <PackageIcon className="w-8 h-8 text-gray-500" />
+        return <PackageIcon className="w-6 h-6 text-gray-500" />
     }
   }
 
@@ -90,7 +121,49 @@ export default function OrderConfirmationPage() {
             <div className="flex items-center mt-4">
               <span className="font-medium mr-2">Status:</span>
               {getStatusIcon(orderDetails.status)}
-              <span className="ml-2">{orderDetails.status}</span>
+              <span className={`ml-2 px-2 py-1 rounded-full text-sm ${statusMap[orderDetails.status].color}`}>
+                {statusMap[orderDetails.status].label}
+              </span>
+            </div>
+            <div className="mt-6">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="flex items-center justify-between w-full text-left text-primary hover:text-primary-dark transition-colors"
+              >
+                <span className="font-medium">Show Order Details</span>
+                <ChevronDownIcon
+                  className={`w-5 h-5 transition-transform ${showDetails ? "transform rotate-180" : ""}`}
+                />
+              </button>
+              <AnimatePresence>
+                {showDetails && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-4 space-y-4"
+                  >
+                    {orderDetails.cartItems.map((item, index) => (
+                      <div key={index} className="border-t pt-4">
+                        <p className="font-medium">{item.product.name}</p>
+                        <p>Quantity: {item.quantity}</p>
+                        <p>Subtotal: ${item.subTotal.toFixed(2)}</p>
+                        {item.selectedVariantsDisplay && (
+                          <div className="mt-2">
+                            <p className="font-medium">Selected Options:</p>
+                            {Object.entries(item.selectedVariantsDisplay).map(([key, value]) => (
+                              <p key={key}>
+                                {key}: {value.value}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </>
         ) : (

@@ -24,6 +24,7 @@ export interface Variant {
 }
 
 export interface VariantOption {
+  image: VariantOption | undefined;
   id: number;
   value: string;
   priceAdjustment: number;

@@ -10,9 +10,11 @@ import toast from "react-hot-toast"
 import { Input } from "@/app/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-
 import LoginModal from "@/app/components/LoginModal"
 import { useAuth } from "../lib/auth"
+
+const API_BASE_URL = 'https://localhost:7007/api'
+
 
 interface CartItem {
   productId: number
@@ -136,9 +138,8 @@ export default function CheckoutPage() {
         UserId: decodedToken.userId,
       }
 
-      console.log("Sending order data:", JSON.stringify(orderData, null, 2))
 
-      const response = await fetch("https://localhost:7007/api/Order", {
+      const response = await fetch(`${API_BASE_URL}/Order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,7 +151,8 @@ export default function CheckoutPage() {
       if (!response.ok) {
         const errorData = await response.text()
         console.error("Server error:", errorData)
-        throw new Error(`Failed to place order: ${response.status} ${response.statusText}`)
+        toast.error(errorData)
+        throw new Error(errorData)
       }
 
       const data = await response.json()

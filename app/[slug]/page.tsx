@@ -14,8 +14,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = await getProduct(params.slug)
+ 
   const recommendedProducts = await getRecommendedProducts(params.slug)
-
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <ClientProductDetails product={product} />

@@ -10,8 +10,9 @@ import {
   UserGroupIcon, 
   CogIcon, 
   ShoppingBagIcon,
+  ChartBarSquareIcon,
 } from '@heroicons/react/24/outline'
-import { BookAIcon, FolderIcon, Home, MenuIcon, NotebookPenIcon, NotebookTextIcon, NotepadTextDashed, QuoteIcon, Settings, XIcon } from 'lucide-react'
+import { BookAIcon, FolderIcon, Footprints, Home, MenuIcon, NotebookPenIcon, NotebookTextIcon, NotepadTextDashed, QuoteIcon, Settings, XIcon } from 'lucide-react'
 import { DesktopIcon } from '@radix-ui/react-icons'
 
 const menuItems = [
@@ -21,11 +22,14 @@ const menuItems = [
   { name: 'Orders', icon: ShoppingBagIcon, href: '/admin/orders' },
   { name: 'Customers', icon: UserGroupIcon, href: '/admin/customers' },
   { name: 'Home Page', icon: Home, href: '/admin/settings' },
-  { name: 'Base Layout', icon: DesktopIcon, href: '/admin/layout-settings' },
+  { name: 'Top Strip', icon: DesktopIcon, href: '/admin/top-strip' },
+  { name: 'Navigation', icon: DesktopIcon, href: '/admin/navigation' },
   { name: 'Logs', icon : NotebookTextIcon, href: '/admin/logs' },
   { name: 'App Settings', icon: Settings, href: '/admin/app-settings' },
   { name: 'FAQs', icon: QuoteIcon, href: '/admin/faq' },
   { name: 'Forms', icon: BookAIcon, href: '/admin/contact-us-forms' },
+  { name: 'Footer', icon: Footprints, href: '/admin/footer' },
+  { name: 'Fonts', icon: ChartBarSquareIcon, href: '/admin/fonts' },
 ]
 
 export function AdminMenu() {

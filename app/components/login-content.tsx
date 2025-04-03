@@ -3,13 +3,13 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Label } from '../components/ui/label'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
 import { jwtDecode } from 'jwt-decode'
 import { useAuth } from '../lib/auth'
 import toast, { Toaster } from 'react-hot-toast'
 import { BouncingDotsLoader, SpinningCircleLoader } from './ui/Loaders'
+import { Label } from '@/components/ui/label'
 
 const API_BASE_URL = "https://localhost:7007/api"
 
@@ -90,7 +90,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold mb-6 text-center">Login to Your Account</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label className="dark:text-white" htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
@@ -101,7 +101,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label className="dark:text-white" htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"

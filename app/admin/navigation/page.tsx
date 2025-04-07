@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
-import { ArrowUp, ChevronDown, ChevronUp, Loader2, RefreshCw, X } from "lucide-react"
+import { ArrowUp, ChevronDown, ChevronUp, GripVertical, InfoIcon, Loader2, X } from "lucide-react"
 import { useAuth } from "@/app/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -21,11 +21,13 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
 
 const API_BASE_URL = "https://localhost:7007/api"
 
 // Link types and their display names
-const linkTypes = {
+const linkTypes: Record<string, string> = {
   universal: "Universal",
   customer_service: "Customer Service",
   navigation: "Navigation",
@@ -34,7 +36,7 @@ const linkTypes = {
 }
 
 // Mandatory links that cannot be deactivated
-const mandatoryLinks = ["Home", "Profile", "Cart", "Search"]
+const mandatoryLinks: string[] = ["Home", "Profile", "Cart", "Search"]
 
 // Update the LinkDTO interface to match the actual API response
 interface LinkDTO {
@@ -61,10 +63,10 @@ export default function AdminNavigationPage() {
   const [allLinks, setAllLinks] = useState<LinkDTO[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [categoriesAsLinks, setCategoriesAsLinks] = useState(false)
   const [reorderMode, setReorderMode] = useState(false)
   const [activeLinks, setActiveLinks] = useState<LinkDTO[]>([])
+  const [dragEnabled, setDragEnabled] = useState(false)
 
   // Alert dialog state for link toggling
   const [isAlertOpen, setIsAlertOpen] = useState(false)
@@ -106,7 +108,7 @@ export default function AdminNavigationPage() {
         // Look for dynamically generated category links (id=0) as a fallback
         const hasCategoryLinks =
           navData.isAllCategories ||
-          (navData.links && navData.links.some((link) => link.id === 0 && link.linkType === "navigation"))
+          (navData.links && navData.links.some((link: LinkDTO) => link.id === 0 && link.linkType === "navigation"))
 
         setCategoriesAsLinks(hasCategoryLinks)
       } else {
@@ -120,7 +122,7 @@ export default function AdminNavigationPage() {
   }
 
   // Fetch active links specifically
-  const fetchActiveLinks = async () => {
+  const fetchActiveLinks = async (): Promise<LinkDTO[]> => {
     try {
       const token = getToken()
       if (!token) {
@@ -146,7 +148,7 @@ export default function AdminNavigationPage() {
   }
 
   // Fetch all available links
-  const fetchAllLinks = async (activeLinksData = []) => {
+  const fetchAllLinks = async (activeLinksData: LinkDTO[] = []) => {
     try {
       const token = getToken()
       if (!token) {
@@ -176,7 +178,7 @@ export default function AdminNavigationPage() {
   }
 
   // Process links to add isActive property based on activeLinks
-  const processLinks = (links, activeLinksData = []) => {
+  const processLinks = (links: LinkDTO[], activeLinksData: LinkDTO[] = []): LinkDTO[] => {
     // Use the provided activeLinksData or fall back to the state
     const activeData = activeLinksData.length > 0 ? activeLinksData : activeLinks
 
@@ -217,7 +219,9 @@ export default function AdminNavigationPage() {
         return
       }
 
-      const endpoint = currentStatus ? `${API_BASE_URL}/Navigation/deactivate/${linkId}` : `${API_BASE_URL}/Navigation/activate/${linkId}`
+      const endpoint = currentStatus
+        ? `${API_BASE_URL}/Navigation/deactivate/${linkId}`
+        : `${API_BASE_URL}/Navigation/activate/${linkId}`
 
       // Optimistically update UI
       setAllLinks((prevLinks) =>
@@ -306,7 +310,8 @@ export default function AdminNavigationPage() {
 
       if (response.ok) {
         toast.success(`Categories as links ${newStatus ? "enabled" : "disabled"} successfully`)
-        // No need to refresh all data since we've already updated the UI
+        // Refresh all data to ensure UI is in sync with backend
+        await fetchAllData()
       } else {
         // Revert optimistic update if request failed
         setCategoriesAsLinks(!newStatus)
@@ -336,6 +341,13 @@ export default function AdminNavigationPage() {
       return
     }
 
+    // Find the link that currently has the target order
+    const linkToSwapWith = allLinks.find((l) => l.displayOrder === newOrder && l.linkType === link.linkType)
+    if (!linkToSwapWith) {
+      toast.error("Could not find a link to swap positions with")
+      return
+    }
+
     setIsSaving(true)
     try {
       const token = getToken()
@@ -344,21 +356,47 @@ export default function AdminNavigationPage() {
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/Navigation/order?linkId=${linkId}&displayOrder=${newOrder}`, {
+      // First update the current link's order
+      const response1 = await fetch(`${API_BASE_URL}/Navigation/order?linkId=${linkId}&displayOrder=${newOrder}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
-      if (response.ok) {
-        toast.success("Link order updated successfully")
-        // Refresh all data to ensure UI is in sync with backend
-        await fetchAllData()
-      } else {
-        const errorData = await response.json()
-        toast.error(errorData || "Failed to update link order")
+      if (!response1.ok) {
+        const errorData = await response1.json()
+        toast.error(errorData || "Failed to update first link order")
+        return
       }
+
+      // Then update the other link's order
+      const response2 = await fetch(
+        `${API_BASE_URL}/Navigation/order?linkId=${linkToSwapWith.id}&displayOrder=${currentOrder}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+
+      if (!response2.ok) {
+        const errorData = await response2.json()
+        toast.error(errorData || "Failed to update second link order")
+        // Try to revert the first change
+        await fetch(`${API_BASE_URL}/Navigation/order?linkId=${linkId}&displayOrder=${currentOrder}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        return
+      }
+
+      toast.success("Link order updated successfully")
+      // Refresh all data to ensure UI is in sync with backend
+      await fetchAllData()
     } catch (error) {
       console.error("Error changing link order:", error)
       toast.error("An error occurred while updating link order")
@@ -367,7 +405,34 @@ export default function AdminNavigationPage() {
     }
   }
 
-  const handleResetNavigation = async () => {
+  // Handle drag and drop reordering
+  const handleDragEnd = async (result: DropResult) => {
+    // Dropped outside the list
+    if (!result.destination) {
+      return
+    }
+
+    const sourceIndex = result.source.index
+    const destinationIndex = result.destination.index
+
+    // No change
+    if (sourceIndex === destinationIndex) {
+      return
+    }
+
+    // Get the links of the specific type being reordered
+    const linkType = result.draggableId.split("-")[0]
+    const typeLinks = getUniversalLinks().filter((link) => !isLinkMandatory(link.name))
+
+    // Get the links being swapped
+    const draggedLink = typeLinks[sourceIndex]
+    const targetLink = typeLinks[destinationIndex]
+
+    if (!draggedLink || !targetLink) {
+      toast.error("Could not identify the links to reorder")
+      return
+    }
+
     setIsSaving(true)
     try {
       const token = getToken()
@@ -376,36 +441,67 @@ export default function AdminNavigationPage() {
         return
       }
 
-      const response = await fetch(`${API_BASE_URL}/Navigation/seed`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      // First update the dragged link's order
+      const response1 = await fetch(
+        `${API_BASE_URL}/Navigation/order?linkId=${draggedLink.id}&displayOrder=${targetLink.displayOrder}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      })
+      )
 
-      if (response.ok) {
-        setIsResetDialogOpen(false)
-        toast.success("Navigation reset successfully")
-        // Refresh all data to ensure UI is in sync with backend
-        await fetchAllData()
-      } else {
-        const errorData = await response.json()
-        toast.error(errorData || "Failed to reset navigation")
+      if (!response1.ok) {
+        const errorData = await response1.json()
+        toast.error(errorData || "Failed to update first link order")
+        return
       }
+
+      // Then update the target link's order
+      const response2 = await fetch(
+        `${API_BASE_URL}/Navigation/order?linkId=${targetLink.id}&displayOrder=${draggedLink.displayOrder}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+
+      if (!response2.ok) {
+        const errorData = await response2.json()
+        toast.error(errorData || "Failed to update second link order")
+        // Try to revert the first change
+        await fetch(
+          `${API_BASE_URL}/Navigation/order?linkId=${draggedLink.id}&displayOrder=${draggedLink.displayOrder}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        return
+      }
+
+      toast.success("Link order updated successfully")
+      // Refresh all data to ensure UI is in sync with backend
+      await fetchAllData()
     } catch (error) {
-      console.error("Error resetting navigation:", error)
-      toast.error("An error occurred while resetting navigation")
+      console.error("Error changing link order:", error)
+      toast.error("An error occurred while updating link order")
     } finally {
       setIsSaving(false)
     }
   }
 
-  const isLinkMandatory = (name: string) => {
+  const isLinkMandatory = (name: string): boolean => {
     return mandatoryLinks.includes(name)
   }
 
   // Get links by type, combining data from all sources
-  const getLinksByType = (type: string) => {
+  const getLinksByType = (type: string): LinkDTO[] => {
     // Start with links from allLinks
     let result = allLinks.filter((link) => link.linkType === type)
 
@@ -417,6 +513,11 @@ export default function AdminNavigationPage() {
 
     // Sort by display order
     return result.sort((a, b) => a.displayOrder - b.displayOrder)
+  }
+
+  // Get universal links for the preview section
+  const getUniversalLinks = () => {
+    return activeLinks.filter((link) => link.linkType === "universal").sort((a, b) => a.displayOrder - b.displayOrder)
   }
 
   if (isLoading) {
@@ -431,27 +532,87 @@ export default function AdminNavigationPage() {
     <div className="container mx-auto p-4 bg-white dark:bg-gray-900 rounded-md">
       <h1 className="text-3xl font-bold text-neutral-700 dark:text-neutral-200 mb-6">Navigation Management</h1>
 
-      {/* Navigation Preview */}
+      {/* Navigation Preview with Drag and Drop */}
       <Card className="w-full border-2 border-indigo-100 dark:border-indigo-900 shadow-lg mb-6">
         <CardHeader>
-          <CardTitle className="text-xl">Navigation Preview</CardTitle>
-          <CardDescription>This shows how your navigation will appear to users</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-xl">Navigation Preview</CardTitle>
+              <CardDescription>This shows how your navigation will appear to users</CardDescription>
+            </div>
+            <Button
+              variant={dragEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDragEnabled(!dragEnabled)}
+              disabled={isSaving}
+            >
+              {dragEnabled ? (
+                <>
+                  <X className="mr-2 h-4 w-4" />
+                  Exit Drag Mode
+                </>
+              ) : (
+                <>
+                  <GripVertical className="mr-2 h-4 w-4" />
+                  Enable Drag & Drop
+                </>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 p-4 border rounded-md bg-gray-50 dark:bg-gray-800">
             {/* Logo placeholder */}
             <div className="px-3 py-1 bg-blue-600 text-white rounded-md shadow-sm">EStore</div>
 
-            {/* Center links */}
+            {/* Center links with drag and drop */}
             <div className="flex gap-2">
-              {activeLinks
-                .filter((link) => link.linkType === "universal")
-                .sort((a, b) => a.displayOrder - b.displayOrder)
-                .map((link) => (
-                  <div key={link.id} className="px-3 py-1 bg-white dark:bg-gray-700 rounded-md shadow-sm">
-                    {link.name}
-                  </div>
-                ))}
+              {dragEnabled ? (
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="universal-links" direction="horizontal">
+                    {(provided) => (
+                      <div ref={provided.innerRef} {...provided.droppableProps} className="flex gap-2">
+                        {getUniversalLinks()
+                          .filter((link) => !isLinkMandatory(link.name))
+                          .map((link, index) => (
+                            <Draggable
+                              key={`universal-${link.id}`}
+                              draggableId={`universal-${link.id}`}
+                              index={index}
+                              isDragDisabled={isSaving || isLinkMandatory(link.name)}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`px-3 py-1 rounded-md shadow-sm flex items-center gap-2 ${
+                                    snapshot.isDragging
+                                      ? "bg-blue-100 dark:bg-blue-900 border-2 border-blue-500"
+                                      : "bg-white dark:bg-gray-700"
+                                  }`}
+                                >
+                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                                  {link.name}
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              ) : (
+                // Regular non-draggable display
+                <>
+                  {getUniversalLinks().map((link) => (
+                    <div key={link.id} className="px-3 py-1 bg-white dark:bg-gray-700 rounded-md shadow-sm">
+                      {link.name}
+                    </div>
+                  ))}
+                </>
+              )}
 
               {categoriesAsLinks && (
                 <div className="px-3 py-1 bg-white dark:bg-gray-700 rounded-md shadow-sm border-2 border-dashed border-green-500">
@@ -468,6 +629,15 @@ export default function AdminNavigationPage() {
               <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600"></div>
             </div>
           </div>
+
+          {dragEnabled && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center">
+                <InfoIcon className="h-4 w-4 mr-2" />
+                Drag and drop the navigation links to reorder them. Changes are saved automatically.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -490,10 +660,6 @@ export default function AdminNavigationPage() {
                       Reorder Links
                     </>
                   )}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setIsResetDialogOpen(true)}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Reset Navigation
                 </Button>
               </div>
             </div>
@@ -519,9 +685,26 @@ export default function AdminNavigationPage() {
                 </div>
               </div>
 
+              {/* Info Alert for Categories as Links */}
+              {categoriesAsLinks && (
+                <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                  <InfoIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertTitle className="text-blue-600 dark:text-blue-400">Categories as Links is enabled</AlertTitle>
+                  <AlertDescription className="text-blue-600/80 dark:text-blue-400/80">
+                    When this option is enabled, other navigation links may not be visible as the categories will take
+                    precedence in the navigation bar.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Links by Type */}
               {Object.entries(linkTypes).map(([type, displayName]) => {
                 const typeLinks = getLinksByType(type)
+
+                // Skip rendering this section if there are no links of this type
+                if (typeLinks.length === 0) {
+                  return null
+                }
 
                 return (
                   <div key={type} className="space-y-2">
@@ -529,88 +712,89 @@ export default function AdminNavigationPage() {
                       <Badge variant="outline" className="mr-2">
                         {displayName}
                       </Badge>
-                      Links {typeLinks.length > 0 ? `(${typeLinks.length})` : "(None)"}
+                      Links ({typeLinks.length})
                     </h3>
 
-                    {typeLinks.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[200px]">Name</TableHead>
-                            <TableHead>URL</TableHead>
-                            <TableHead className="w-[100px]">Order</TableHead>
-                            <TableHead className="w-[100px]">Status</TableHead>
-                            {reorderMode && <TableHead className="w-[100px]">Reorder</TableHead>}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {typeLinks.map((link) => (
-                            <TableRow key={`${link.id}-${link.name}`}>
-                              <TableCell className="font-medium">
-                                {link.name}
-                                {isLinkMandatory(link.name) && (
-                                  <Badge variant="secondary" className="ml-2">
-                                    Required
-                                  </Badge>
-                                )}
-                                {link.id === 0 && (
-                                  <Badge
-                                    variant="outline"
-                                    className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                  >
-                                    Dynamic
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>{link.url}</TableCell>
-                              <TableCell>{link.displayOrder}</TableCell>
-                              <TableCell>
-                                {link.id === 0 ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                  >
-                                    Always Active
-                                  </Badge>
-                                ) : (
-                                  <Switch
-                                    checked={link.isActive}
-                                    onCheckedChange={() => confirmToggleLink(link.id, link.isActive)}
-                                    disabled={isSaving || isLinkMandatory(link.name)}
-                                  />
-                                )}
-                              </TableCell>
-                              {reorderMode && link.id !== 0 && (
-                                <TableCell>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleChangeOrder(link.id, "up")}
-                                      disabled={isSaving || link.displayOrder === 1}
-                                    >
-                                      <ChevronUp className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleChangeOrder(link.id, "down")}
-                                      disabled={isSaving || link.displayOrder === allLinks.length}
-                                    >
-                                      <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[200px]">Name</TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead className="w-[100px]">Order</TableHead>
+                          <TableHead className="w-[100px]">Status</TableHead>
+                          {reorderMode && <TableHead className="w-[100px]">Reorder</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {typeLinks.map((link) => (
+                          <TableRow key={`${link.id}-${link.name}`}>
+                            <TableCell className="font-medium">
+                              {link.name}
+                              {isLinkMandatory(link.name) && (
+                                <Badge variant="default" className="ml-2 bg-blue-500 hover:bg-blue-600">
+                                  Required
+                                </Badge>
                               )}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground">
-                        No {displayName.toLowerCase()} links found
-                      </div>
-                    )}
+                              {link.id === 0 && (
+                                <Badge
+                                  variant="outline"
+                                  className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                >
+                                  Dynamic
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{link.url}</TableCell>
+                            <TableCell>{link.displayOrder}</TableCell>
+                            <TableCell>
+                              {link.id === 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                >
+                                  Always Active
+                                </Badge>
+                              ) : (
+                                <Switch
+                                  checked={link.isActive}
+                                  onCheckedChange={() => confirmToggleLink(link.id, link.isActive || false)}
+                                  disabled={isSaving || isLinkMandatory(link.name)}
+                                />
+                              )}
+                            </TableCell>
+                            {reorderMode && link.id !== 0 && !isLinkMandatory(link.name) && (
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleChangeOrder(link.id, "up")}
+                                    disabled={isSaving || link.displayOrder === 1}
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleChangeOrder(link.id, "down")}
+                                    disabled={isSaving || link.displayOrder === allLinks.length}
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+                            {reorderMode && (isLinkMandatory(link.name) || link.id === 0) && (
+                              <TableCell>
+                                <span className="text-sm text-muted-foreground">
+                                  {isLinkMandatory(link.name) ? "Cannot reorder" : "Dynamic link"}
+                                </span>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )
               })}
@@ -720,39 +904,31 @@ export default function AdminNavigationPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+            <AccordionItem value="item-5">
+              <AccordionTrigger>Using Drag & Drop Reordering</AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4">
+                  <p>
+                    The navigation preview section now supports drag and drop reordering for a more intuitive
+                    experience:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Click the "Enable Drag & Drop" button to activate drag mode</li>
+                    <li>Drag links to reorder them in the navigation preview</li>
+                    <li>Changes are saved automatically when you drop a link in a new position</li>
+                    <li>Required links and dynamic category links cannot be reordered</li>
+                    <li>Click "Exit Drag Mode" when you're finished reordering</li>
+                  </ul>
+                  <p>
+                    This visual approach makes it easier to organize your navigation exactly how you want it to appear
+                    on your site.
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </CardContent>
       </Card>
-
-      {/* Reset Confirmation Dialog */}
-      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reset Navigation</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to reset the navigation to its default state? This will restore all default links
-              and their original order.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleResetNavigation}
-              disabled={isSaving}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetting...
-                </>
-              ) : (
-                "Reset Navigation"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Confirmation Dialog for Link Actions */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>

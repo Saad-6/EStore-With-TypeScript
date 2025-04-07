@@ -6,8 +6,11 @@ import { usePathname, useRouter } from "next/navigation"
 import { MagnifyingGlassIcon, ShoppingCartIcon, UserIcon, MoonIcon, SunIcon } from "@heroicons/react/24/outline"
 import { useTheme } from "../lib/theme-context"
 import { SearchModal } from "./search-modal"
-import { ChevronDown, Shirt, Tag, Zap } from "lucide-react"
+import { ChevronDown, Headphones, Shirt, Tag, Zap, Info, BookOpen, HelpCircle, Mail } from "lucide-react"
 import TopStrip from "./ui/top-strip"
+
+// Declare the API_BASE_URL variable
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 
 interface LinkDTO {
   id: number
@@ -28,8 +31,6 @@ interface Category {
   name: string
   slug: string
 }
-
-const API_BASE_URL = "https://localhost:7007/api"
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -53,6 +54,7 @@ export default function Navbar() {
     }
   }, [navigation?.categoriesAsLinks])
 
+  // Replace the fetchNavigation function with this updated version
   const fetchNavigation = async () => {
     setIsLoading(true)
     try {
@@ -60,12 +62,11 @@ export default function Navbar() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log("DATA FROM THE API", data)
+        console.info("Data From The API: ", data)
 
         // Check if data is an array (direct links array) or an object with links property
         if (Array.isArray(data)) {
           // Create a NavigationDTO object with the links array
-          // We need to make a separate call to get the categoriesAsLinks setting
           setNavigation({
             links: data,
             categoriesAsLinks: false, // Default value
@@ -78,7 +79,7 @@ export default function Navbar() {
               const settingsData = await settingsResponse.json()
               // Update navigation with the correct categoriesAsLinks value
               setNavigation((prev) => ({
-                ...prev,
+                ...prev!,
                 categoriesAsLinks: settingsData.isAllCategories || false,
               }))
             }
@@ -87,7 +88,7 @@ export default function Navbar() {
           }
         } else {
           // Data is already in the expected format
-          setNavigation(data as NavigationDTO)
+          setNavigation(data)
         }
       }
     } catch (error) {
@@ -99,7 +100,7 @@ export default function Navbar() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`)
+      const response = await fetch("/api/categories")
 
       if (response.ok) {
         const data: Category[] = await response.json()
@@ -114,11 +115,29 @@ export default function Navbar() {
     router.push(`/search-results?q=${encodeURIComponent(searchTerm)}`)
   }
 
-  // Get universal links for center navigation
+  // Replace the getUniversalLinks function with this to show dynamic category links
   const getUniversalLinks = () => {
     return (
       navigation?.links
         ?.filter((link) => link.linkType === "universal")
+        ?.sort((a, b) => a.displayOrder - b.displayOrder) || []
+    )
+  }
+
+  // Add this new function to get category links when categories as links is enabled
+  const getCategoryLinks = () => {
+    return (
+      navigation?.links
+        ?.filter((link) => link.id === 0 && link.linkType === "navigation")
+        ?.sort((a, b) => a.displayOrder - b.displayOrder) || []
+    )
+  }
+
+  // Add this function to get customer service links
+  const getCustomerServiceLinks = () => {
+    return (
+      navigation?.links
+        ?.filter((link) => link.linkType === "customer_service")
         ?.sort((a, b) => a.displayOrder - b.displayOrder) || []
     )
   }
@@ -132,6 +151,16 @@ export default function Navbar() {
         return <Tag className="w-5 h-5 mr-2" />
       case "deals":
         return <Zap className="w-5 h-5 mr-2" />
+      case "about":
+        return <Info className="w-5 h-5 mr-2" />
+      case "blog":
+        return <BookOpen className="w-5 h-5 mr-2" />
+      case "faq":
+      case "frequently asked questions":
+        return <HelpCircle className="w-5 h-5 mr-2" />
+      case "contact":
+      case "contact us":
+        return <Mail className="w-5 h-5 mr-2" />
       default:
         return null
     }
@@ -170,8 +199,22 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {/* Categories Dropdown - Only shown if enabled */}
-            {navigation?.categoriesAsLinks && categories.length > 0 && (
+            {/* Dynamic Category Links - These are the links with id=0 and linkType="navigation" */}
+            {getCategoryLinks().map((link) => (
+              <Link
+                key={`category-${link.name}`}
+                href={link.url}
+                className={`text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium flex items-center ${
+                  pathname === link.url ? "text-blue-600 dark:text-blue-400" : ""
+                }`}
+              >
+                <Tag className="w-5 h-5 mr-2" />
+                {link.name}
+              </Link>
+            ))}
+
+            {/* Categories Dropdown - Only shown if enabled and no dynamic category links */}
+            {navigation?.categoriesAsLinks && categories.length > 0 && getCategoryLinks().length === 0 && (
               <div className="relative group">
                 <button
                   className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium flex items-center"
@@ -199,6 +242,42 @@ export default function Navbar() {
                         onClick={() => setIsCategoriesDropdownOpen(false)}
                       >
                         {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Customer Service Links */}
+            {getCustomerServiceLinks().length > 0 && (
+              <div className="relative group">
+                <button
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium flex items-center"
+                  onClick={() => setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen)}
+                  onMouseEnter={() => setIsCategoriesDropdownOpen(true)}
+                  onMouseLeave={() => setIsCategoriesDropdownOpen(false)}
+                >
+                  <Headphones className="w-5 h-5 mr-2" />
+                  Help
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </button>
+                <div
+                  className={`absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 transition-all duration-200 z-10 ${
+                    isCategoriesDropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"
+                  }`}
+                  onMouseEnter={() => setIsCategoriesDropdownOpen(true)}
+                  onMouseLeave={() => setIsCategoriesDropdownOpen(false)}
+                >
+                  <div className="py-1">
+                    {getCustomerServiceLinks().map((link) => (
+                      <Link
+                        key={link.id}
+                        href={link.url}
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => setIsCategoriesDropdownOpen(false)}
+                      >
+                        {link.name}
                       </Link>
                     ))}
                   </div>
@@ -290,8 +369,23 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Categories in mobile menu - Only shown if enabled */}
-          {navigation?.categoriesAsLinks && categories.length > 0 && (
+          {/* Dynamic Category Links for Mobile */}
+          {getCategoryLinks().map((link) => (
+            <Link
+              key={`category-${link.name}`}
+              href={link.url}
+              className={`text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 block px-3 py-2 text-base font-medium flex items-center ${
+                pathname === link.url ? "text-blue-600 dark:text-blue-400" : ""
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Tag className="w-5 h-5 mr-2" />
+              {link.name}
+            </Link>
+          ))}
+
+          {/* Categories in mobile menu - Only shown if enabled and no dynamic category links */}
+          {navigation?.categoriesAsLinks && categories.length > 0 && getCategoryLinks().length === 0 && (
             <div className="px-3 py-2">
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Categories</h3>
               <div className="mt-2 space-y-1">
@@ -303,6 +397,25 @@ export default function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {category.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Customer Service Links in mobile menu */}
+          {getCustomerServiceLinks().length > 0 && (
+            <div className="px-3 py-2">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Help</h3>
+              <div className="mt-2 space-y-1">
+                {getCustomerServiceLinks().map((link) => (
+                  <Link
+                    key={link.id}
+                    href={link.url}
+                    className="block pl-3 pr-4 py-2 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.name}
                   </Link>
                 ))}
               </div>

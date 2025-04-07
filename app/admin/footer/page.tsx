@@ -6,7 +6,6 @@ import {
   Edit,
   Save,
   X,
-  Check,
   LinkIcon,
   Facebook,
   Twitter,
@@ -464,15 +463,12 @@ export default function AdminFooterPage() {
         const errorData = await response2.json()
         toast.error(errorData || "Failed to update second link order")
         // Try to revert the first change
-        await fetch(
-          `${API_BASE_URL}/Footer/order?linkId=${draggedLink.id}&displayOrder=${draggedLink.displayOrder}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        await fetch(`${API_BASE_URL}/Footer/order?linkId=${draggedLink.id}&displayOrder=${draggedLink.displayOrder}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        )
+        })
         return
       }
 
@@ -859,8 +855,8 @@ export default function AdminFooterPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="links" >
-        <TabsList >
+      <Tabs defaultValue="links">
+        <TabsList>
           <TabsTrigger value="links">Links</TabsTrigger>
           <TabsTrigger value="social">Social Media</TabsTrigger>
           <TabsTrigger value="about">About Us</TabsTrigger>
@@ -872,21 +868,6 @@ export default function AdminFooterPage() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-xl">Footer Links</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setReorderMode(!reorderMode)}>
-                    {reorderMode ? (
-                      <>
-                        <X className="mr-2 h-4 w-4" />
-                        Exit Reorder Mode
-                      </>
-                    ) : (
-                      <>
-                        <ArrowUp className="mr-2 h-4 w-4" />
-                        Reorder Links
-                      </>
-                    )}
-                  </Button>
-                </div>
               </div>
               <CardDescription>Manage which links appear in your footer</CardDescription>
             </CardHeader>
@@ -941,16 +922,11 @@ export default function AdminFooterPage() {
                               </TableCell>
                               <TableCell>{link.displayOrder}</TableCell>
                               <TableCell>
-                                <Badge
-                                  variant={isLinkActive(link.id) ? "default" : "outline"}
-                                  className={
-                                    isLinkActive(link.id)
-                                      ? "bg-green-500 hover:bg-green-600 text-white"
-                                      : "border-yellow-500 text-yellow-500"
-                                  }
-                                >
-                                  {isLinkActive(link.id) ? "Active" : "Inactive"}
-                                </Badge>
+                                <Switch
+                                  checked={isLinkActive(link.id)}
+                                  onCheckedChange={() => confirmToggleLink(link.id, isLinkActive(link.id))}
+                                  disabled={isSaving}
+                                />
                               </TableCell>
                               {reorderMode && (
                                 <TableCell>
@@ -974,26 +950,7 @@ export default function AdminFooterPage() {
                                   </div>
                                 </TableCell>
                               )}
-                              <TableCell>
-                                <Button
-                                  variant={isLinkActive(link.id) ? "destructive" : "default"}
-                                  size="sm"
-                                  onClick={() => confirmToggleLink(link.id, isLinkActive(link.id))}
-                                  disabled={isSaving}
-                                >
-                                  {isLinkActive(link.id) ? (
-                                    <>
-                                      <X className="h-4 w-4 mr-2" />
-                                      Deactivate
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Check className="h-4 w-4 mr-2" />
-                                      Activate
-                                    </>
-                                  )}
-                                </Button>
-                              </TableCell>
+              
                             </TableRow>
                           ))}
                         </TableBody>

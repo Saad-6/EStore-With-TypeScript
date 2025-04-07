@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/pagination"
 import { Input } from "@/app/components/ui/input"
 
-const API_BASE_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 const GOOGLE_FONTS_API_URL = "https://www.googleapis.com/webfonts/v1/webfonts"
 
 interface FontVariant {
@@ -110,8 +110,6 @@ export default function AdminFontPage() {
         return
       }
 
-      // In a real application, you would proxy this request through your backend
-      // to protect your API key. This is just for demonstration.
       const response = await fetch(`${API_BASE_URL}/BaseLayout/GoogleFonts`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -124,10 +122,12 @@ export default function AdminFontPage() {
         setFilteredFonts(data.items)
         setTotalPages(Math.ceil(data.items.length / itemsPerPage))
       } else {
-        throw new Error("Failed to fetch fonts")
+        
+        const data : string = await response.text();
+        toast.error(data)
       }
     } catch (error) {
-      console.error("Error fetching fonts:", error)
+      console.error("Error fetching fontss:", error)
       toast.error("Failed to load fonts. Please try again.")
     } finally {
       setIsLoading(false)

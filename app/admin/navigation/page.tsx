@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
 
-const API_BASE_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 
 // Link types and their display names
 const linkTypes: Record<string, string> = {
@@ -647,21 +647,6 @@ export default function AdminNavigationPage() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-xl">Navigation Links</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setReorderMode(!reorderMode)}>
-                  {reorderMode ? (
-                    <>
-                      <X className="mr-2 h-4 w-4" />
-                      Exit Reorder Mode
-                    </>
-                  ) : (
-                    <>
-                      <ArrowUp className="mr-2 h-4 w-4" />
-                      Reorder Links
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
             <CardDescription>Manage which links appear in your navigation bar</CardDescription>
           </CardHeader>

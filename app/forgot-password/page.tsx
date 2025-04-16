@@ -132,8 +132,8 @@ export default function ForgotPasswordPage() {
         setCurrentStep(ForgotPasswordStep.VERIFY_OTP)
         toast.success("OTP sent to your email")
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.message || "Failed to send OTP")
+        const errorData = await response.text()
+        toast.error(errorData || "Failed to send OTP")
       }
     } catch (error) {
       console.error("Error requesting OTP:", error)
@@ -159,8 +159,8 @@ export default function ForgotPasswordPage() {
         setCurrentStep(ForgotPasswordStep.RESET_PASSWORD)
         toast.success("OTP verified successfully")
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.message || "Invalid OTP")
+        const errorData = await response.text()
+        toast.error(errorData || "Invalid OTP")
       }
     } catch (error) {
       console.error("Error verifying OTP:", error)
@@ -186,8 +186,8 @@ export default function ForgotPasswordPage() {
         setCurrentStep(ForgotPasswordStep.SUCCESS)
         toast.success("Password reset successfully")
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.message || "Failed to reset password")
+        const errorData = await response.text()
+        toast.error(errorData || "Failed to reset password")
       }
     } catch (error) {
       console.error("Error resetting password:", error)

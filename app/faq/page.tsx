@@ -15,7 +15,7 @@ interface FAQ {
   answer: string
 }
 
-const API_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 const ITEMS_PER_PAGE = 10
 
 export default function FAQPage() {
@@ -50,7 +50,7 @@ export default function FAQPage() {
   const fetchFAQs = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`${API_URL}/FAQ?page=1&size=100`) // Get all FAQs for client-side filtering
+      const response = await fetch(`${API_BASE_URL}/FAQ?page=1&size=100`) // Get all FAQs for client-side filtering
       if (response.ok) {
         const data = await response.json()
         setFaqs(data)

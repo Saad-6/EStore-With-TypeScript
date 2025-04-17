@@ -29,6 +29,8 @@ interface FooterDTO {
   icons: IconEntity[]
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
+
 const Footer = () => {
   const [footerData, setFooterData] = useState<FooterDTO | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -37,7 +39,7 @@ const Footer = () => {
   useEffect(() => {
     const fetchFooterData = async () => {
       try {
-        const response = await fetch("https://localhost:7007/api/Footer")
+        const response = await fetch(`${API_BASE_URL}/Footer`)
 
         if (!response.ok) {
           throw new Error("Failed to fetch footer data")

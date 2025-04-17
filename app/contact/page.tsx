@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "../components/ui/input"
 
-const API_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 const contactFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -49,7 +49,7 @@ export default function ContactUsPage() {
     setIsSubmitting(true)
     try {
         console.log(data)
-      const response = await fetch(`${API_URL}/Contact`, {
+      const response = await fetch(`${API_BASE_URL}/Contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

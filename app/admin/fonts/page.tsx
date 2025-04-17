@@ -303,7 +303,7 @@ export default function AdminFontPage() {
           <PaginationItem>
             <PaginationPrevious
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
+ 
             />
           </PaginationItem>
 
@@ -312,7 +312,7 @@ export default function AdminFontPage() {
           <PaginationItem>
             <PaginationNext
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
+       
             />
           </PaginationItem>
         </PaginationContent>
@@ -446,13 +446,13 @@ export default function AdminFontPage() {
                       </h3>
                       <div className="flex flex-wrap gap-2 mt-1">
                         <Badge
-                          variant="outline"
+                        
                           className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
                         >
                           {font.category}
                         </Badge>
                         <Badge
-                          variant="outline"
+                 
                           className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
                         >
                           {font.variants.length} variants

@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "../components/ui/input"
 
-const API_BASE_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 // Step 1: Request OTP Schema
 const requestOTPSchema = z.object({
@@ -119,12 +119,17 @@ export default function ForgotPasswordPage() {
   const onRequestOTP = async (data: RequestOTPFormValues) => {
     setIsLoading(true)
     try {
+      const dto = JSON.stringify({
+        email: data.email,
+          isPasswordRecovery: true,
+      })
+      console.log("Request body : ", dto);
       const response = await fetch(`${API_BASE_URL}/Auth/RequestOTP`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: data.email }),
+        body: dto,
       })
 
       if (response.ok) {
@@ -282,7 +287,9 @@ export default function ForgotPasswordPage() {
                               {[0, 1, 2, 3].map((index) => (
                                 <Input
                                   key={index}
-                                  ref={(el) => (otpInputRefs.current[index] = el)}
+                                  ref={(el) => {
+                                    otpInputRefs.current[index] = el
+                                  }}
                                   type="text"
                                   inputMode="numeric"
                                   pattern="[0-9]*"
@@ -431,4 +438,3 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
-

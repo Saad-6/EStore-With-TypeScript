@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import LoginModal from "@/app/components/LoginModal"
 import { useAuth } from "../lib/auth"
 
-const API_BASE_URL = 'https://localhost:7007/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 
 interface CartItem {

@@ -11,7 +11,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { BouncingDotsLoader, SpinningCircleLoader } from './ui/Loaders'
 import { Label } from '@/components/ui/label'
 
-const API_BASE_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')

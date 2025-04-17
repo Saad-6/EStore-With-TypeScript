@@ -8,7 +8,7 @@ import { ConfirmationAlert } from "@/app/components/ui/confirmation-alert"
 import { BouncingDotsLoader } from "@/app/components/ui/Loaders"
 import { useAuth } from "@/app/lib/auth"
 
-const API_BASE_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 
 interface Category {

@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 import { Input } from '../components/ui/input'
 
 
-  const API_BASE_URL = 'https://localhost:7007/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 interface Category {
   id: string

@@ -182,6 +182,9 @@ export default function AdminContactPage() {
     }
   }
 
+
+  // Yet To Be Implemented
+
   const sendResponse = async () => {
     if (!selectedSubmission) return
 
@@ -193,13 +196,13 @@ export default function AdminContactPage() {
         return
       }
 
-      const response = await fetch(`${API_URL}/Contact/${selectedSubmission.id}/respond`, {
+      const response : any= await fetch(`${API_URL}/Contact/${selectedSubmission.id}/respond`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ response }),
+        // body: JSON.stringify({ response }),
       })
 
       if (response.ok) {

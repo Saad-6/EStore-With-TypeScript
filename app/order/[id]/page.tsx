@@ -11,7 +11,7 @@ import { toast } from "react-hot-toast"
 import { CustomBadge } from "@/app/components/custom-badge"
 
 
-const API_BASE_URL = "https://localhost:7007/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 interface OrderDetailsProps {
   params: { id: string }

@@ -62,7 +62,7 @@ export default function UserReviews({ reviews }: UserReviewsProps) {
   if (reviews.length === 0) {
     return (
       <div className="mt-12 border-t pt-8">
-        <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+        <h2 className="text-2xl font-bold mb-6">Customer Reviews 69</h2>
         <p className="text-gray-500">No reviews yet. Be the first to review this product!</p>
       </div>
     )

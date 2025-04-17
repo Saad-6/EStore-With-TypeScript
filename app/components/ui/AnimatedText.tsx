@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const AnimatedText = ({ children }) => {
+const AnimatedText = ({ children} : any) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}

@@ -7,6 +7,8 @@ import { useParams } from "next/navigation"
 import confetti from "canvas-confetti"
 import type { Product, VariantOption } from "@/interfaces/product-interfaces"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
+
 interface CartItems {
   product: Product
   quantity: number
@@ -40,7 +42,7 @@ export default function OrderConfirmationPage() {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await fetch(`https://localhost:7007/api/Order/${orderId}`)
+        const response = await fetch(`${API_BASE_URL}/Order/${orderId}`)
         if (!response.ok) {
           throw new Error("Failed to fetch order details")
         }

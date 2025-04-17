@@ -1,17 +1,18 @@
 import React from 'react'
 import Image from 'next/image'
 import { Star, HelpCircle } from 'lucide-react'
-import { Product, Category, CustomerReview, FAQ } from '@/interfaces/product-interfaces'
+import { Product, Category, FAQ } from '@/interfaces/product-interfaces'
 
 interface SearchResultsProps {
   query: string
   results: {
     products: Product[]
     categories: Category[]
-    reviews: CustomerReview[]
     faqs: FAQ[]
   }
 }
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 export function SearchResults({ query, results }: SearchResultsProps) {
   return (
@@ -62,40 +63,6 @@ export function SearchResults({ query, results }: SearchResultsProps) {
         </section>
       )}
 
-      {results.reviews.length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">Customer Reviews</h2>
-          <div className="space-y-4">
-            {results.reviews.map((review) => (
-              <div key={review.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-                <div className="flex items-center mb-2">
-                  <Image
-                    src={review.avatar}
-                    alt={review.name}
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded-full mr-4"
-                  />
-                  <div>
-                    <h3 className="font-semibold">{review.name}</h3>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300">{review.comment}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {results.faqs.length > 0 && (
         <section className="mb-12">

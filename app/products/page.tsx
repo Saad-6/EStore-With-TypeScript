@@ -12,7 +12,7 @@ import { Input } from '../components/ui/input'
 import ModernProductCard from '../components/modern-product-card'
 
 
-const API_BASE_URL = 'https://localhost:7007/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7007/api"
 
 interface ProductsPageProps {
   initialName?: string

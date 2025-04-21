@@ -26,7 +26,7 @@ const menuItems = [
   { name: 'Navigation', icon: DesktopIcon, href: '/admin/navigation' },
   { name: 'Email Settings', icon: DesktopIcon, href: '/admin/email-settings' },
   { name: 'Logs', icon : NotebookTextIcon, href: '/admin/logs' },
-  { name: 'App Settings', icon: Settings, href: '/admin/app-settings' },
+  { name: 'Store Settings', icon: Settings, href: '/admin/store-settings' },
   { name: 'FAQs', icon: QuoteIcon, href: '/admin/faq' },
   { name: 'Forms', icon: BookAIcon, href: '/admin/contact-us-forms' },
   { name: 'Footer', icon: Footprints, href: '/admin/footer' },

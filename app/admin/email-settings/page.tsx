@@ -175,7 +175,7 @@ const { getToken } = useAuth()
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">Email Address <small className="text-slate-500">(Sometimes referred to as 'Username')</small></Label>
             <Input
               id="email"
               name="email"
